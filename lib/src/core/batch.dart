@@ -1,0 +1,80 @@
+import 'dart:ffi' as ffi;
+import 'dart:typed_data';
+
+import 'package:ffi/ffi.dart';
+
+import 'base.dart';
+import '../g/llama.g.dart' as llama;
+
+/// Input data for llama_decode
+/// A llama_batch object can contain input about one or many sequences
+/// The provided arrays (i.e. token, embd, pos, etc.) must have size of n_tokens
+///
+/// - token  : the token ids of the input (used when embd is NULL)
+/// - embd   : token embeddings (i.e. float vector of size n_embd) (used when token is NULL)
+/// - pos    : the positions of the respective token in the sequence
+/// (if set to NULL, the token position will be tracked automatically by llama_decode)
+/// - seq_id : the sequence to which the respective token belongs
+/// (if set to NULL, the sequence ID will be assumed to be 0)
+/// - logits : if zero, the logits (and/or the embeddings) for the respective token will not be output
+/// (if set to NULL, only the logits for last token will be returned)
+class Batch extends LLAMAStruct<llama.llama_batch> {
+  static final finalizer = ffi.NativeFinalizer(llama.addresses.llama_batch_free.cast());
+  static final finalizer1 = ffi.NativeFinalizer(calloc.nativeFree);
+
+  Batch(super.ptr, {bool attach = true}) {
+    if (attach) {
+      finalizer.attach(this, ptr.cast(), detach: this);
+      finalizer1.attach(this, ptr.cast(), detach: this);
+    }
+  }
+
+  /// Allocates a batch of tokens on the heap that can hold a maximum of n_tokens
+  /// Each token can be assigned up to n_seq_max sequence ids
+  /// The batch has to be freed with llama_batch_free()
+  /// If embd != 0, llama_batch.embd will be allocated with size of n_tokens * embd * sizeof(float)
+  /// Otherwise, llama_batch.token will be allocated to store n_tokens llama_token
+  /// The rest of the llama_batch members are allocated with size n_tokens
+  /// All members are left uninitialized
+  factory Batch.init(int numTokens, int embd, int nSeqMax) {
+    final b = llama.llama_batch_init(numTokens, embd, nSeqMax);
+    final p = calloc<llama.llama_batch>()..ref = b;
+    return Batch(p);
+  }
+
+  factory Batch.fromNative(llama.llama_batch batch) {
+    final p = calloc<llama.llama_batch>()..ref = batch;
+    return Batch(p);
+  }
+
+  int get numTokens => ref.n_tokens;
+  set numTokens(int value) => ref.n_tokens = value;
+
+  Int32List get tokens => ref.token.asTypedList(numTokens);
+  ffi.Pointer<llama.llama_token> get tokenPtr => ref.token;
+
+  Float32List get embd => ref.embd.asTypedList(numTokens);
+  ffi.Pointer<ffi.Float> get embdPtr => ref.embd;
+
+  Int32List get pos => ref.pos.asTypedList(numTokens);
+  ffi.Pointer<llama.llama_pos> get posPtr => ref.pos;
+
+  // Int32List get nSeqId => ref.n_seq_id.asTypedList(numTokens);
+  // ffi.Pointer<llama.llama_seq_id> get nSeqIdPtr => ref.n_seq_id;
+  // external ffi.Pointer<ffi.Pointer<llama_seq_id>> seq_id;
+
+  Int8List get logits => output;
+  Int8List get output => ref.logits.asTypedList(numTokens);
+  ffi.Pointer<ffi.Int8> get outputPtr => ref.logits;
+
+  @override
+  void dispose() {
+    finalizer.detach(this);
+    finalizer1.detach(this);
+    llama.llama_batch_free(ref);
+    calloc.free(ptr);
+  }
+
+  @override
+  llama.llama_batch get ref => ptr.ref;
+}

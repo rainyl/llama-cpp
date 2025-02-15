@@ -3,8 +3,7 @@ import 'dart:io';
 import 'package:llama_cpp/embedding.dart';
 import 'package:test/test.dart';
 
-const _url = 'https://hf-mirror.com/CompendiumLabs/bge-base-zh-v1.5-gguf/'
-    'blob/main/bge-base-zh-v1.5-q4_k_m.gguf';
+const _url = 'https://hf-mirror.com/CompendiumLabs/bge-base-zh-v1.5-gguf/blob/main/bge-base-zh-v1.5-q4_k_m.gguf';
 const _embedModelPath = 'test/data/bge-base-zh-v1.5.gguf';
 
 void _compareList(List<double> d, List<double> v) {

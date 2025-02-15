@@ -31,6 +31,10 @@ external llama_model_quantize_params llama_model_quantize_default_params();
 @ffi.Native<ffi.Void Function()>(symbol: 'llama_backend_init')
 external void llama_backend_init();
 
+/// Call once at the end of the program - currently only used for MPI
+@ffi.Native<ffi.Void Function()>(symbol: 'llama_backend_free')
+external void llama_backend_free();
+
 /// optional:
 @ffi.Native<ffi.Void Function(ffi.Int32)>(symbol: 'llama_numa_init')
 external void llama_numa_init(
@@ -53,15 +57,33 @@ external void llama_detach_threadpool(
   ffi.Pointer<llama_context> ctx,
 );
 
-/// Call once at the end of the program - currently only used for MPI
-@ffi.Native<ffi.Void Function()>(symbol: 'llama_backend_free')
-external void llama_backend_free();
-
 @ffi.Native<
     ffi.Pointer<llama_model> Function(ffi.Pointer<ffi.Char>,
         llama_model_params)>(symbol: 'llama_load_model_from_file')
 external ffi.Pointer<llama_model> llama_load_model_from_file(
   ffi.Pointer<ffi.Char> path_model,
+  llama_model_params params,
+);
+
+/// Load the model from a file
+/// If the file is split into multiple parts, the file name must follow this pattern: <name>-%05d-of-%05d.gguf
+/// If the split file name does not follow this pattern, use llama_model_load_from_splits
+@ffi.Native<
+    ffi.Pointer<llama_model> Function(ffi.Pointer<ffi.Char>,
+        llama_model_params)>(symbol: 'llama_model_load_from_file')
+external ffi.Pointer<llama_model> llama_model_load_from_file(
+  ffi.Pointer<ffi.Char> path_model,
+  llama_model_params params,
+);
+
+/// Load the model from multiple splits (support custom naming scheme)
+/// The paths must be in the correct order
+@ffi.Native<
+    ffi.Pointer<llama_model> Function(ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        ffi.Size, llama_model_params)>(symbol: 'llama_model_load_from_splits')
+external ffi.Pointer<llama_model> llama_model_load_from_splits(
+  ffi.Pointer<ffi.Pointer<ffi.Char>> paths,
+  int n_paths,
   llama_model_params params,
 );
 
@@ -71,7 +93,20 @@ external void llama_free_model(
   ffi.Pointer<llama_model> model,
 );
 
-/// TODO: rename to llama_init_from_model
+@ffi.Native<ffi.Void Function(ffi.Pointer<llama_model>)>(
+    symbol: 'llama_model_free')
+external void llama_model_free(
+  ffi.Pointer<llama_model> model,
+);
+
+@ffi.Native<
+    ffi.Pointer<llama_context> Function(ffi.Pointer<llama_model>,
+        llama_context_params)>(symbol: 'llama_init_from_model')
+external ffi.Pointer<llama_context> llama_init_from_model(
+  ffi.Pointer<llama_model> model,
+  llama_context_params params,
+);
+
 @ffi.Native<
     ffi.Pointer<llama_context> Function(ffi.Pointer<llama_model>,
         llama_context_params)>(symbol: 'llama_new_context_with_model')
@@ -129,12 +164,6 @@ external int llama_n_seq_max(
 );
 
 @ffi.Native<ffi.Int32 Function(ffi.Pointer<llama_model>)>(
-    symbol: 'llama_n_vocab')
-external int llama_n_vocab(
-  ffi.Pointer<llama_model> model,
-);
-
-@ffi.Native<ffi.Int32 Function(ffi.Pointer<llama_model>)>(
     symbol: 'llama_n_ctx_train')
 external int llama_n_ctx_train(
   ffi.Pointer<llama_model> model,
@@ -158,6 +187,12 @@ external int llama_n_head(
   ffi.Pointer<llama_model> model,
 );
 
+@ffi.Native<ffi.Int32 Function(ffi.Pointer<llama_vocab>)>(
+    symbol: 'llama_n_vocab')
+external int llama_n_vocab(
+  ffi.Pointer<llama_vocab> vocab,
+);
+
 @ffi.Native<ffi.Pointer<llama_model> Function(ffi.Pointer<llama_context>)>(
     symbol: 'llama_get_model')
 external ffi.Pointer<llama_model> llama_get_model(
@@ -170,23 +205,59 @@ external int llama_pooling_type1(
   ffi.Pointer<llama_context> ctx,
 );
 
-@ffi.Native<ffi.Int32 Function(ffi.Pointer<llama_model>)>(
-    symbol: 'llama_vocab_type')
-external int llama_vocab_type1(
+@ffi.Native<ffi.Pointer<llama_vocab> Function(ffi.Pointer<llama_model>)>(
+    symbol: 'llama_model_get_vocab')
+external ffi.Pointer<llama_vocab> llama_model_get_vocab(
   ffi.Pointer<llama_model> model,
 );
 
 @ffi.Native<ffi.Int32 Function(ffi.Pointer<llama_model>)>(
-    symbol: 'llama_rope_type')
-external int llama_rope_type1(
+    symbol: 'llama_model_rope_type')
+external int llama_model_rope_type(
+  ffi.Pointer<llama_model> model,
+);
+
+@ffi.Native<ffi.Int32 Function(ffi.Pointer<llama_model>)>(
+    symbol: 'llama_model_n_ctx_train')
+external int llama_model_n_ctx_train(
+  ffi.Pointer<llama_model> model,
+);
+
+@ffi.Native<ffi.Int32 Function(ffi.Pointer<llama_model>)>(
+    symbol: 'llama_model_n_embd')
+external int llama_model_n_embd(
+  ffi.Pointer<llama_model> model,
+);
+
+@ffi.Native<ffi.Int32 Function(ffi.Pointer<llama_model>)>(
+    symbol: 'llama_model_n_layer')
+external int llama_model_n_layer(
+  ffi.Pointer<llama_model> model,
+);
+
+@ffi.Native<ffi.Int32 Function(ffi.Pointer<llama_model>)>(
+    symbol: 'llama_model_n_head')
+external int llama_model_n_head(
   ffi.Pointer<llama_model> model,
 );
 
 /// Get the model's RoPE frequency scaling factor
 @ffi.Native<ffi.Float Function(ffi.Pointer<llama_model>)>(
-    symbol: 'llama_rope_freq_scale_train')
-external double llama_rope_freq_scale_train(
+    symbol: 'llama_model_rope_freq_scale_train')
+external double llama_model_rope_freq_scale_train(
   ffi.Pointer<llama_model> model,
+);
+
+@ffi.Native<ffi.Int32 Function(ffi.Pointer<llama_vocab>)>(
+    symbol: 'llama_vocab_type')
+external int llama_vocab_type1(
+  ffi.Pointer<llama_vocab> vocab,
+);
+
+@ffi.Native<ffi.Int32 Function(ffi.Pointer<llama_vocab>)>(
+    symbol: 'llama_vocab_n_tokens')
+external int llama_vocab_n_tokens(
+  ffi.Pointer<llama_vocab> vocab,
 );
 
 /// Get metadata value as a string by key name
@@ -252,20 +323,21 @@ external int llama_model_size(
   ffi.Pointer<llama_model> model,
 );
 
+/// Get the default chat template. Returns nullptr if not available
+/// If name is NULL, returns the default chat template
+@ffi.Native<
+    ffi.Pointer<ffi.Char> Function(ffi.Pointer<llama_model>,
+        ffi.Pointer<ffi.Char>)>(symbol: 'llama_model_chat_template')
+external ffi.Pointer<ffi.Char> llama_model_chat_template(
+  ffi.Pointer<llama_model> model,
+  ffi.Pointer<ffi.Char> name,
+);
+
 /// Returns the total number of parameters in the model
 @ffi.Native<ffi.Uint64 Function(ffi.Pointer<llama_model>)>(
     symbol: 'llama_model_n_params')
 external int llama_model_n_params(
   ffi.Pointer<llama_model> model,
-);
-
-/// Get a llama model tensor
-@ffi.Native<
-    ffi.Pointer<ggml_tensor> Function(ffi.Pointer<llama_model>,
-        ffi.Pointer<ffi.Char>)>(symbol: 'llama_get_model_tensor')
-external ffi.Pointer<ggml_tensor> llama_get_model_tensor(
-  ffi.Pointer<llama_model> model,
-  ffi.Pointer<ffi.Char> name,
 );
 
 /// Returns true if the model contains an encoder that requires llama_encode() call
@@ -309,13 +381,20 @@ external int llama_model_quantize(
 );
 
 /// Load a LoRA adapter from file
-/// The loaded adapter will be associated to the given model, and will be free when the model is deleted
 @ffi.Native<
-    ffi.Pointer<llama_lora_adapter> Function(ffi.Pointer<llama_model>,
-        ffi.Pointer<ffi.Char>)>(symbol: 'llama_lora_adapter_init')
-external ffi.Pointer<llama_lora_adapter> llama_lora_adapter_init(
+    ffi.Pointer<llama_adapter_lora> Function(ffi.Pointer<llama_model>,
+        ffi.Pointer<ffi.Char>)>(symbol: 'llama_adapter_lora_init')
+external ffi.Pointer<llama_adapter_lora> llama_adapter_lora_init(
   ffi.Pointer<llama_model> model,
   ffi.Pointer<ffi.Char> path_lora,
+);
+
+/// Manually free a LoRA adapter
+/// Note: loaded adapters will be free when the associated model is deleted
+@ffi.Native<ffi.Void Function(ffi.Pointer<llama_adapter_lora>)>(
+    symbol: 'llama_adapter_lora_free')
+external void llama_adapter_lora_free(
+  ffi.Pointer<llama_adapter_lora> adapter,
 );
 
 /// Add a loaded LoRA adapter to given context
@@ -323,11 +402,11 @@ external ffi.Pointer<llama_lora_adapter> llama_lora_adapter_init(
 @ffi.Native<
     ffi.Int32 Function(
         ffi.Pointer<llama_context>,
-        ffi.Pointer<llama_lora_adapter>,
-        ffi.Float)>(symbol: 'llama_lora_adapter_set')
-external int llama_lora_adapter_set(
+        ffi.Pointer<llama_adapter_lora>,
+        ffi.Float)>(symbol: 'llama_set_adapter_lora')
+external int llama_set_adapter_lora(
   ffi.Pointer<llama_context> ctx,
-  ffi.Pointer<llama_lora_adapter> adapter,
+  ffi.Pointer<llama_adapter_lora> adapter,
   double scale,
 );
 
@@ -335,25 +414,17 @@ external int llama_lora_adapter_set(
 /// Return -1 if the adapter is not present in the context
 @ffi.Native<
     ffi.Int32 Function(ffi.Pointer<llama_context>,
-        ffi.Pointer<llama_lora_adapter>)>(symbol: 'llama_lora_adapter_remove')
-external int llama_lora_adapter_remove(
+        ffi.Pointer<llama_adapter_lora>)>(symbol: 'llama_rm_adapter_lora')
+external int llama_rm_adapter_lora(
   ffi.Pointer<llama_context> ctx,
-  ffi.Pointer<llama_lora_adapter> adapter,
+  ffi.Pointer<llama_adapter_lora> adapter,
 );
 
 /// Remove all LoRA adapters from given context
 @ffi.Native<ffi.Void Function(ffi.Pointer<llama_context>)>(
-    symbol: 'llama_lora_adapter_clear')
-external void llama_lora_adapter_clear(
+    symbol: 'llama_clear_adapter_lora')
+external void llama_clear_adapter_lora(
   ffi.Pointer<llama_context> ctx,
-);
-
-/// Manually free a LoRA adapter
-/// Note: loaded adapters will be free when the associated model is deleted
-@ffi.Native<ffi.Void Function(ffi.Pointer<llama_lora_adapter>)>(
-    symbol: 'llama_lora_adapter_free')
-external void llama_lora_adapter_free(
-  ffi.Pointer<llama_lora_adapter> adapter,
 );
 
 /// Apply a loaded control vector to a llama_context, or if data is NULL, clear
@@ -369,9 +440,9 @@ external void llama_lora_adapter_free(
         ffi.Size,
         ffi.Int32,
         ffi.Int32,
-        ffi.Int32)>(symbol: 'llama_control_vector_apply')
-external int llama_control_vector_apply(
-  ffi.Pointer<llama_context> lctx,
+        ffi.Int32)>(symbol: 'llama_apply_adapter_cvec')
+external int llama_apply_adapter_cvec(
+  ffi.Pointer<llama_context> ctx,
   ffi.Pointer<ffi.Float> data,
   int len,
   int n_embd,
@@ -396,6 +467,7 @@ external void llama_kv_cache_view_free(
 );
 
 /// Update the KV cache view structure with the current state of the KV cache. (use only for debugging purposes)
+/// TODO: change signature to llama_kv_cache_view_update(struct llama_kv_cache_view * view, const struct llama_context * ctx)
 @ffi.Native<
     ffi.Void Function(ffi.Pointer<llama_context>,
         ffi.Pointer<llama_kv_cache_view>)>(symbol: 'llama_kv_cache_view_update')
@@ -520,6 +592,13 @@ external void llama_kv_cache_defrag(
 @ffi.Native<ffi.Void Function(ffi.Pointer<llama_context>)>(
     symbol: 'llama_kv_cache_update')
 external void llama_kv_cache_update(
+  ffi.Pointer<llama_context> ctx,
+);
+
+/// Check if the context supports KV cache shifting
+@ffi.Native<ffi.Bool Function(ffi.Pointer<llama_context>)>(
+    symbol: 'llama_kv_cache_can_shift')
+external bool llama_kv_cache_can_shift(
   ffi.Pointer<llama_context> ctx,
 );
 
@@ -729,7 +808,7 @@ external void llama_batch_free(
 /// Processes a batch of tokens with the ecoder part of the encoder-decoder model.
 /// Stores the encoder output internally for later use by the decoder cross-attention layers.
 /// 0 - success
-/// < 0 - error
+/// < 0 - error. the KV cache state is restored to the state before this call
 @ffi.Native<ffi.Int32 Function(ffi.Pointer<llama_context>, llama_batch)>(
     symbol: 'llama_encode')
 external int llama_encode(
@@ -740,7 +819,7 @@ external int llama_encode(
 /// Positive return values does not mean a fatal error, but rather a warning.
 /// 0 - success
 /// 1 - could not find a KV slot for the batch (try reducing the size of the batch or increase the context)
-/// < 0 - error
+/// < 0 - error. the KV cache state is restored to the state before this call
 @ffi.Native<ffi.Int32 Function(ffi.Pointer<llama_context>, llama_batch)>(
     symbol: 'llama_decode')
 external int llama_decode(
@@ -874,149 +953,257 @@ external ffi.Pointer<ffi.Float> llama_get_embeddings_seq(
 /// Vocab
 @ffi.Native<
     ffi.Pointer<ffi.Char> Function(
-        ffi.Pointer<llama_model>, llama_token)>(symbol: 'llama_token_get_text')
-external ffi.Pointer<ffi.Char> llama_token_get_text(
-  ffi.Pointer<llama_model> model,
+        ffi.Pointer<llama_vocab>, llama_token)>(symbol: 'llama_vocab_get_text')
+external ffi.Pointer<ffi.Char> llama_vocab_get_text(
+  ffi.Pointer<llama_vocab> vocab,
   int token,
 );
 
-@ffi.Native<ffi.Float Function(ffi.Pointer<llama_model>, llama_token)>(
-    symbol: 'llama_token_get_score')
-external double llama_token_get_score(
-  ffi.Pointer<llama_model> model,
+@ffi.Native<ffi.Float Function(ffi.Pointer<llama_vocab>, llama_token)>(
+    symbol: 'llama_vocab_get_score')
+external double llama_vocab_get_score(
+  ffi.Pointer<llama_vocab> vocab,
   int token,
 );
 
-@ffi.Native<ffi.Int32 Function(ffi.Pointer<llama_model>, llama_token)>(
-    symbol: 'llama_token_get_attr')
-external int llama_token_get_attr(
-  ffi.Pointer<llama_model> model,
+@ffi.Native<ffi.Int32 Function(ffi.Pointer<llama_vocab>, llama_token)>(
+    symbol: 'llama_vocab_get_attr')
+external int llama_vocab_get_attr(
+  ffi.Pointer<llama_vocab> vocab,
   int token,
 );
 
 /// Check if the token is supposed to end generation (end-of-generation, eg. EOS, EOT, etc.)
-@ffi.Native<ffi.Bool Function(ffi.Pointer<llama_model>, llama_token)>(
-    symbol: 'llama_token_is_eog')
-external bool llama_token_is_eog(
-  ffi.Pointer<llama_model> model,
+@ffi.Native<ffi.Bool Function(ffi.Pointer<llama_vocab>, llama_token)>(
+    symbol: 'llama_vocab_is_eog')
+external bool llama_vocab_is_eog(
+  ffi.Pointer<llama_vocab> vocab,
   int token,
 );
 
 /// Identify if Token Id is a control token or a render-able token
-@ffi.Native<ffi.Bool Function(ffi.Pointer<llama_model>, llama_token)>(
-    symbol: 'llama_token_is_control')
-external bool llama_token_is_control(
-  ffi.Pointer<llama_model> model,
+@ffi.Native<ffi.Bool Function(ffi.Pointer<llama_vocab>, llama_token)>(
+    symbol: 'llama_vocab_is_control')
+external bool llama_vocab_is_control(
+  ffi.Pointer<llama_vocab> vocab,
   int token,
 );
 
 /// Special tokens
-@ffi.Native<llama_token Function(ffi.Pointer<llama_model>)>(
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
+    symbol: 'llama_vocab_bos')
+external int llama_vocab_bos(
+  ffi.Pointer<llama_vocab> vocab,
+);
+
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
+    symbol: 'llama_vocab_eos')
+external int llama_vocab_eos(
+  ffi.Pointer<llama_vocab> vocab,
+);
+
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
+    symbol: 'llama_vocab_eot')
+external int llama_vocab_eot(
+  ffi.Pointer<llama_vocab> vocab,
+);
+
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
+    symbol: 'llama_vocab_sep')
+external int llama_vocab_sep(
+  ffi.Pointer<llama_vocab> vocab,
+);
+
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
+    symbol: 'llama_vocab_nl')
+external int llama_vocab_nl(
+  ffi.Pointer<llama_vocab> vocab,
+);
+
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
+    symbol: 'llama_vocab_pad')
+external int llama_vocab_pad(
+  ffi.Pointer<llama_vocab> vocab,
+);
+
+@ffi.Native<ffi.Bool Function(ffi.Pointer<llama_vocab>)>(
+    symbol: 'llama_vocab_get_add_bos')
+external bool llama_vocab_get_add_bos(
+  ffi.Pointer<llama_vocab> vocab,
+);
+
+@ffi.Native<ffi.Bool Function(ffi.Pointer<llama_vocab>)>(
+    symbol: 'llama_vocab_get_add_eos')
+external bool llama_vocab_get_add_eos(
+  ffi.Pointer<llama_vocab> vocab,
+);
+
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
+    symbol: 'llama_vocab_fim_pre')
+external int llama_vocab_fim_pre(
+  ffi.Pointer<llama_vocab> vocab,
+);
+
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
+    symbol: 'llama_vocab_fim_suf')
+external int llama_vocab_fim_suf(
+  ffi.Pointer<llama_vocab> vocab,
+);
+
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
+    symbol: 'llama_vocab_fim_mid')
+external int llama_vocab_fim_mid(
+  ffi.Pointer<llama_vocab> vocab,
+);
+
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
+    symbol: 'llama_vocab_fim_pad')
+external int llama_vocab_fim_pad(
+  ffi.Pointer<llama_vocab> vocab,
+);
+
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
+    symbol: 'llama_vocab_fim_rep')
+external int llama_vocab_fim_rep(
+  ffi.Pointer<llama_vocab> vocab,
+);
+
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
+    symbol: 'llama_vocab_fim_sep')
+external int llama_vocab_fim_sep(
+  ffi.Pointer<llama_vocab> vocab,
+);
+
+@ffi.Native<
+    ffi.Pointer<ffi.Char> Function(
+        ffi.Pointer<llama_vocab>, llama_token)>(symbol: 'llama_token_get_text')
+external ffi.Pointer<ffi.Char> llama_token_get_text(
+  ffi.Pointer<llama_vocab> vocab,
+  int token,
+);
+
+@ffi.Native<ffi.Float Function(ffi.Pointer<llama_vocab>, llama_token)>(
+    symbol: 'llama_token_get_score')
+external double llama_token_get_score(
+  ffi.Pointer<llama_vocab> vocab,
+  int token,
+);
+
+@ffi.Native<ffi.Int32 Function(ffi.Pointer<llama_vocab>, llama_token)>(
+    symbol: 'llama_token_get_attr')
+external int llama_token_get_attr(
+  ffi.Pointer<llama_vocab> vocab,
+  int token,
+);
+
+@ffi.Native<ffi.Bool Function(ffi.Pointer<llama_vocab>, llama_token)>(
+    symbol: 'llama_token_is_eog')
+external bool llama_token_is_eog(
+  ffi.Pointer<llama_vocab> vocab,
+  int token,
+);
+
+@ffi.Native<ffi.Bool Function(ffi.Pointer<llama_vocab>, llama_token)>(
+    symbol: 'llama_token_is_control')
+external bool llama_token_is_control(
+  ffi.Pointer<llama_vocab> vocab,
+  int token,
+);
+
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
     symbol: 'llama_token_bos')
 external int llama_token_bos(
-  ffi.Pointer<llama_model> model,
+  ffi.Pointer<llama_vocab> vocab,
 );
 
-@ffi.Native<llama_token Function(ffi.Pointer<llama_model>)>(
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
     symbol: 'llama_token_eos')
 external int llama_token_eos(
-  ffi.Pointer<llama_model> model,
+  ffi.Pointer<llama_vocab> vocab,
 );
 
-@ffi.Native<llama_token Function(ffi.Pointer<llama_model>)>(
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
     symbol: 'llama_token_eot')
 external int llama_token_eot(
-  ffi.Pointer<llama_model> model,
+  ffi.Pointer<llama_vocab> vocab,
 );
 
-@ffi.Native<llama_token Function(ffi.Pointer<llama_model>)>(
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
     symbol: 'llama_token_cls')
 external int llama_token_cls(
-  ffi.Pointer<llama_model> model,
+  ffi.Pointer<llama_vocab> vocab,
 );
 
-@ffi.Native<llama_token Function(ffi.Pointer<llama_model>)>(
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
     symbol: 'llama_token_sep')
 external int llama_token_sep(
-  ffi.Pointer<llama_model> model,
+  ffi.Pointer<llama_vocab> vocab,
 );
 
-@ffi.Native<llama_token Function(ffi.Pointer<llama_model>)>(
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
     symbol: 'llama_token_nl')
 external int llama_token_nl(
-  ffi.Pointer<llama_model> model,
+  ffi.Pointer<llama_vocab> vocab,
 );
 
-@ffi.Native<llama_token Function(ffi.Pointer<llama_model>)>(
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
     symbol: 'llama_token_pad')
 external int llama_token_pad(
-  ffi.Pointer<llama_model> model,
+  ffi.Pointer<llama_vocab> vocab,
 );
 
-@ffi.Native<ffi.Bool Function(ffi.Pointer<llama_model>)>(
+@ffi.Native<ffi.Bool Function(ffi.Pointer<llama_vocab>)>(
     symbol: 'llama_add_bos_token')
 external bool llama_add_bos_token(
-  ffi.Pointer<llama_model> model,
+  ffi.Pointer<llama_vocab> vocab,
 );
 
-@ffi.Native<ffi.Bool Function(ffi.Pointer<llama_model>)>(
+@ffi.Native<ffi.Bool Function(ffi.Pointer<llama_vocab>)>(
     symbol: 'llama_add_eos_token')
 external bool llama_add_eos_token(
-  ffi.Pointer<llama_model> model,
+  ffi.Pointer<llama_vocab> vocab,
 );
 
-@ffi.Native<llama_token Function(ffi.Pointer<llama_model>)>(
-    symbol: 'llama_token_prefix')
-external int llama_token_prefix(
-  ffi.Pointer<llama_model> model,
-);
-
-@ffi.Native<llama_token Function(ffi.Pointer<llama_model>)>(
-    symbol: 'llama_token_middle')
-external int llama_token_middle(
-  ffi.Pointer<llama_model> model,
-);
-
-@ffi.Native<llama_token Function(ffi.Pointer<llama_model>)>(
-    symbol: 'llama_token_suffix')
-external int llama_token_suffix(
-  ffi.Pointer<llama_model> model,
-);
-
-@ffi.Native<llama_token Function(ffi.Pointer<llama_model>)>(
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
     symbol: 'llama_token_fim_pre')
 external int llama_token_fim_pre(
-  ffi.Pointer<llama_model> model,
+  ffi.Pointer<llama_vocab> vocab,
 );
 
-@ffi.Native<llama_token Function(ffi.Pointer<llama_model>)>(
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
     symbol: 'llama_token_fim_suf')
 external int llama_token_fim_suf(
-  ffi.Pointer<llama_model> model,
+  ffi.Pointer<llama_vocab> vocab,
 );
 
-@ffi.Native<llama_token Function(ffi.Pointer<llama_model>)>(
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
     symbol: 'llama_token_fim_mid')
 external int llama_token_fim_mid(
-  ffi.Pointer<llama_model> model,
+  ffi.Pointer<llama_vocab> vocab,
 );
 
-@ffi.Native<llama_token Function(ffi.Pointer<llama_model>)>(
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
     symbol: 'llama_token_fim_pad')
 external int llama_token_fim_pad(
-  ffi.Pointer<llama_model> model,
+  ffi.Pointer<llama_vocab> vocab,
 );
 
-@ffi.Native<llama_token Function(ffi.Pointer<llama_model>)>(
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
     symbol: 'llama_token_fim_rep')
 external int llama_token_fim_rep(
-  ffi.Pointer<llama_model> model,
+  ffi.Pointer<llama_vocab> vocab,
 );
 
-@ffi.Native<llama_token Function(ffi.Pointer<llama_model>)>(
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
     symbol: 'llama_token_fim_sep')
 external int llama_token_fim_sep(
-  ffi.Pointer<llama_model> model,
+  ffi.Pointer<llama_vocab> vocab,
+);
+
+@ffi.Native<llama_token Function(ffi.Pointer<llama_vocab>)>(
+    symbol: 'llama_vocab_cls')
+external int llama_vocab_cls(
+  ffi.Pointer<llama_vocab> vocab,
 );
 
 /// @details Convert the provided text into tokens.
@@ -1028,7 +1215,7 @@ external int llama_token_fim_sep(
 /// as plaintext. Does not insert a leading space.
 @ffi.Native<
     ffi.Int32 Function(
-        ffi.Pointer<llama_model>,
+        ffi.Pointer<llama_vocab>,
         ffi.Pointer<ffi.Char>,
         ffi.Int32,
         ffi.Pointer<llama_token>,
@@ -1036,7 +1223,7 @@ external int llama_token_fim_sep(
         ffi.Bool,
         ffi.Bool)>(symbol: 'llama_tokenize')
 external int llama_tokenize(
-  ffi.Pointer<llama_model> model,
+  ffi.Pointer<llama_vocab> vocab,
   ffi.Pointer<ffi.Char> text,
   int text_len,
   ffi.Pointer<llama_token> tokens,
@@ -1052,14 +1239,14 @@ external int llama_tokenize(
 /// @param special If true, special tokens are rendered in the output.
 @ffi.Native<
     ffi.Int32 Function(
-        ffi.Pointer<llama_model>,
+        ffi.Pointer<llama_vocab>,
         llama_token,
         ffi.Pointer<ffi.Char>,
         ffi.Int32,
         ffi.Int32,
         ffi.Bool)>(symbol: 'llama_token_to_piece')
 external int llama_token_to_piece(
-  ffi.Pointer<llama_model> model,
+  ffi.Pointer<llama_vocab> vocab,
   int token,
   ffi.Pointer<ffi.Char> buf,
   int length,
@@ -1075,7 +1262,7 @@ external int llama_token_to_piece(
 /// @param unparse_special If true, special tokens are rendered in the output.
 @ffi.Native<
     ffi.Int32 Function(
-        ffi.Pointer<llama_model>,
+        ffi.Pointer<llama_vocab>,
         ffi.Pointer<llama_token>,
         ffi.Int32,
         ffi.Pointer<ffi.Char>,
@@ -1083,7 +1270,7 @@ external int llama_token_to_piece(
         ffi.Bool,
         ffi.Bool)>(symbol: 'llama_detokenize')
 external int llama_detokenize(
-  ffi.Pointer<llama_model> model,
+  ffi.Pointer<llama_vocab> vocab,
   ffi.Pointer<llama_token> tokens,
   int n_tokens,
   ffi.Pointer<ffi.Char> text,
@@ -1104,7 +1291,6 @@ external int llama_detokenize(
 /// @return The total number of bytes of the formatted prompt. If is it larger than the size of buffer, you may need to re-alloc it and then re-apply the template.
 @ffi.Native<
     ffi.Int32 Function(
-        ffi.Pointer<llama_model>,
         ffi.Pointer<ffi.Char>,
         ffi.Pointer<llama_chat_message>,
         ffi.Size,
@@ -1112,7 +1298,6 @@ external int llama_detokenize(
         ffi.Pointer<ffi.Char>,
         ffi.Int32)>(symbol: 'llama_chat_apply_template')
 external int llama_chat_apply_template(
-  ffi.Pointer<llama_model> model,
   ffi.Pointer<ffi.Char> tmpl,
   ffi.Pointer<llama_chat_message> chat,
   int n_msg,
@@ -1121,7 +1306,23 @@ external int llama_chat_apply_template(
   int length,
 );
 
+/// Get list of built-in chat templates
+@ffi.Native<ffi.Int32 Function(ffi.Pointer<ffi.Pointer<ffi.Char>>, ffi.Size)>(
+    symbol: 'llama_chat_builtin_templates')
+external int llama_chat_builtin_templates(
+  ffi.Pointer<ffi.Pointer<ffi.Char>> output,
+  int len,
+);
+
 /// mirror of llama_sampler_i:
+@ffi.Native<
+    ffi.Pointer<llama_sampler> Function(ffi.Pointer<llama_sampler_i>,
+        llama_sampler_context_t)>(symbol: 'llama_sampler_init')
+external ffi.Pointer<llama_sampler> llama_sampler_init(
+  ffi.Pointer<llama_sampler_i> iface,
+  llama_sampler_context_t ctx,
+);
+
 @ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Pointer<llama_sampler>)>(
     symbol: 'llama_sampler_name')
 external ffi.Pointer<ffi.Char> llama_sampler_name(
@@ -1309,42 +1510,53 @@ external ffi.Pointer<llama_sampler> llama_sampler_init_mirostat_v2(
 
 @ffi.Native<
     ffi.Pointer<llama_sampler> Function(
-        ffi.Pointer<llama_model>,
+        ffi.Pointer<llama_vocab>,
         ffi.Pointer<ffi.Char>,
         ffi.Pointer<ffi.Char>)>(symbol: 'llama_sampler_init_grammar')
 external ffi.Pointer<llama_sampler> llama_sampler_init_grammar(
-  ffi.Pointer<llama_model> model,
+  ffi.Pointer<llama_vocab> vocab,
   ffi.Pointer<ffi.Char> grammar_str,
   ffi.Pointer<ffi.Char> grammar_root,
 );
 
+/// @details Lazy grammar sampler, introduced in https://github.com/ggerganov/llama.cpp/pull/9639
+/// @param trigger_words A list of words that will trigger the grammar sampler. This may be updated to a loose regex syntax (w/ ^) in a near future.
+/// @param trigger_tokens A list of tokens that will trigger the grammar sampler.
 @ffi.Native<
     ffi.Pointer<llama_sampler> Function(
-        ffi.Int32,
-        llama_token,
-        llama_token,
-        ffi.Int32,
-        ffi.Float,
-        ffi.Float,
-        ffi.Float,
-        ffi.Bool,
-        ffi.Bool)>(symbol: 'llama_sampler_init_penalties')
+        ffi.Pointer<llama_vocab>,
+        ffi.Pointer<ffi.Char>,
+        ffi.Pointer<ffi.Char>,
+        ffi.Pointer<ffi.Pointer<ffi.Char>>,
+        ffi.Size,
+        ffi.Pointer<llama_token>,
+        ffi.Size)>(symbol: 'llama_sampler_init_grammar_lazy')
+external ffi.Pointer<llama_sampler> llama_sampler_init_grammar_lazy(
+  ffi.Pointer<llama_vocab> vocab,
+  ffi.Pointer<ffi.Char> grammar_str,
+  ffi.Pointer<ffi.Char> grammar_root,
+  ffi.Pointer<ffi.Pointer<ffi.Char>> trigger_words,
+  int num_trigger_words,
+  ffi.Pointer<llama_token> trigger_tokens,
+  int num_trigger_tokens,
+);
+
+/// NOTE: Avoid using on the full vocabulary as searching for repeated tokens can become slow. For example, apply top-k or top-p sampling first.
+@ffi.Native<
+    ffi.Pointer<llama_sampler> Function(ffi.Int32, ffi.Float, ffi.Float,
+        ffi.Float)>(symbol: 'llama_sampler_init_penalties')
 external ffi.Pointer<llama_sampler> llama_sampler_init_penalties(
-  int n_vocab,
-  int special_eos_id,
-  int linefeed_id,
   int penalty_last_n,
   double penalty_repeat,
   double penalty_freq,
   double penalty_present,
-  bool penalize_nl,
-  bool ignore_eos,
 );
 
 /// @details DRY sampler, designed by p-e-w, as described in: https://github.com/oobabooga/text-generation-webui/pull/5677, porting Koboldcpp implementation authored by pi6am: https://github.com/LostRuins/koboldcpp/pull/982
 @ffi.Native<
     ffi.Pointer<llama_sampler> Function(
-        ffi.Pointer<llama_model>,
+        ffi.Pointer<llama_vocab>,
+        ffi.Int32,
         ffi.Float,
         ffi.Float,
         ffi.Int32,
@@ -1352,7 +1564,8 @@ external ffi.Pointer<llama_sampler> llama_sampler_init_penalties(
         ffi.Pointer<ffi.Pointer<ffi.Char>>,
         ffi.Size)>(symbol: 'llama_sampler_init_dry')
 external ffi.Pointer<llama_sampler> llama_sampler_init_dry(
-  ffi.Pointer<llama_model> model,
+  ffi.Pointer<llama_vocab> vocab,
+  int n_ctx_train,
   double dry_multiplier,
   double dry_base,
   int dry_allowed_length,
@@ -1390,10 +1603,10 @@ external ffi.Pointer<llama_sampler> llama_sampler_init_logit_bias(
 ///
 /// 3. discard non-EOG tokens with low prob
 /// 4. if no tokens are left -> pick EOT
-@ffi.Native<ffi.Pointer<llama_sampler> Function(ffi.Pointer<llama_model>)>(
+@ffi.Native<ffi.Pointer<llama_sampler> Function(ffi.Pointer<llama_vocab>)>(
     symbol: 'llama_sampler_init_infill')
 external ffi.Pointer<llama_sampler> llama_sampler_init_infill(
-  ffi.Pointer<llama_model> model,
+  ffi.Pointer<llama_vocab> vocab,
 );
 
 /// Returns the seed used by the sampler if applicable, LLAMA_DEFAULT_SEED otherwise
@@ -1500,14 +1713,11 @@ external void llama_perf_sampler_reset(
   ffi.Pointer<llama_sampler> chain,
 );
 
-@ffi.Native<ffi.Void Function(ffi.Pointer<FILE>, ffi.Pointer<llama_context>)>(
-    symbol: 'llama_perf_dump_yaml')
-external void llama_perf_dump_yaml(
-  ffi.Pointer<FILE> stream,
-  ffi.Pointer<llama_context> ctx,
-);
+/// C interface
+///
+/// TODO: show sample usage
+final class llama_vocab extends ffi.Opaque {}
 
-/// struct llama_vocab; // TODO: add in the future
 final class llama_model extends ffi.Opaque {}
 
 final class llama_context extends ffi.Opaque {}
@@ -1626,7 +1836,6 @@ final class llama_token_data extends ffi.Struct {
 /// llama_sampler_free(smpl);
 ///
 /// TODO: In the future, llama_sampler will be utilized to offload the sampling to the backends (e.g. GPU).
-/// TODO: in the future, the entire sampling API that uses llama_model should start using llama_vocab
 typedef llama_sampler_context_t = ffi.Pointer<ffi.Void>;
 
 abstract class llama_vocab_type {
@@ -1678,12 +1887,16 @@ abstract class llama_vocab_pre_type {
   static const int LLAMA_VOCAB_PRE_TYPE_GPT3_FINNISH = 24;
   static const int LLAMA_VOCAB_PRE_TYPE_EXAONE = 25;
   static const int LLAMA_VOCAB_PRE_TYPE_CHAMELEON = 26;
+  static const int LLAMA_VOCAB_PRE_TYPE_MINERVA = 27;
+  static const int LLAMA_VOCAB_PRE_TYPE_DEEPSEEK3_LLM = 28;
 }
 
 abstract class llama_rope_type {
   static const int LLAMA_ROPE_TYPE_NONE = -1;
   static const int LLAMA_ROPE_TYPE_NORM = 0;
   static const int LLAMA_ROPE_TYPE_NEOX = 2;
+  static const int LLAMA_ROPE_TYPE_MROPE = 8;
+  static const int LLAMA_ROPE_TYPE_VISION = 24;
 }
 
 abstract class llama_token_type {
@@ -1804,15 +2017,6 @@ abstract class llama_ftype {
   static const int LLAMA_FTYPE_MOSTLY_BF16 = 32;
 
   /// except 1d tensors
-  static const int LLAMA_FTYPE_MOSTLY_Q4_0_4_4 = 33;
-
-  /// except 1d tensors
-  static const int LLAMA_FTYPE_MOSTLY_Q4_0_4_8 = 34;
-
-  /// except 1d tensors
-  static const int LLAMA_FTYPE_MOSTLY_Q4_0_8_8 = 35;
-
-  /// except 1d tensors
   static const int LLAMA_FTYPE_MOSTLY_TQ1_0 = 36;
 
   /// except 1d tensors
@@ -1827,7 +2031,8 @@ abstract class llama_rope_scaling_type {
   static const int LLAMA_ROPE_SCALING_TYPE_NONE = 0;
   static const int LLAMA_ROPE_SCALING_TYPE_LINEAR = 1;
   static const int LLAMA_ROPE_SCALING_TYPE_YARN = 2;
-  static const int LLAMA_ROPE_SCALING_TYPE_MAX_VALUE = 2;
+  static const int LLAMA_ROPE_SCALING_TYPE_LONGROPE = 3;
+  static const int LLAMA_ROPE_SCALING_TYPE_MAX_VALUE = 3;
 }
 
 abstract class llama_pooling_type {
@@ -1925,6 +2130,9 @@ final class UnnamedUnion1 extends ffi.Union {
 }
 
 final class llama_model_params extends ffi.Struct {
+  /// NULL-terminated list of devices to use for offloading (if NULL, all available devices are used)
+  external ffi.Pointer<ggml_backend_dev_t> devices;
+
   /// number of layers to store in VRAM
   @ffi.Int32()
   external int n_gpu_layers;
@@ -1939,9 +2147,6 @@ final class llama_model_params extends ffi.Struct {
 
   /// proportion of the model (layers or rows) to offload to each GPU, size: llama_max_devices()
   external ffi.Pointer<ffi.Float> tensor_split;
-
-  /// comma separated list of RPC servers to use for offloading
-  external ffi.Pointer<ffi.Char> rpc_servers;
 
   /// Called with a progress value between 0.0 and 1.0. Pass NULL to disable.
   /// If the provided progress_callback returns true, model loading continues.
@@ -1970,6 +2175,10 @@ final class llama_model_params extends ffi.Struct {
   @ffi.Bool()
   external bool check_tensors;
 }
+
+typedef ggml_backend_dev_t = ffi.Pointer<ggml_backend_device>;
+
+final class ggml_backend_device extends ffi.Opaque {}
 
 typedef llama_progress_callback
     = ffi.Pointer<ffi.NativeFunction<llama_progress_callbackFunction>>;
@@ -2107,9 +2316,6 @@ final class ggml_tensor extends ffi.Struct {
   @ffi.Int32()
   external int type;
 
-  @ffi.Int32()
-  external int backend;
-
   external ffi.Pointer<ggml_backend_buffer> buffer;
 
   /// number of elements
@@ -2134,8 +2340,6 @@ final class ggml_tensor extends ffi.Struct {
   @ffi.Int32()
   external int flags;
 
-  external ffi.Pointer<ggml_tensor> grad;
-
   @ffi.Array.multi([10])
   external ffi.Array<ffi.Pointer<ggml_tensor>> src;
 
@@ -2152,6 +2356,9 @@ final class ggml_tensor extends ffi.Struct {
 
   /// extra things e.g. for ggml-cuda.cu
   external ffi.Pointer<ffi.Void> extra;
+
+  @ffi.Array.multi([8])
+  external ffi.Array<ffi.Char> padding;
 }
 
 /// NOTE: always add types at the end of the enum to keep backward compatibility
@@ -2188,18 +2395,17 @@ abstract class ggml_type {
   static const int GGML_TYPE_F64 = 28;
   static const int GGML_TYPE_IQ1_M = 29;
   static const int GGML_TYPE_BF16 = 30;
-  static const int GGML_TYPE_Q4_0_4_4 = 31;
-  static const int GGML_TYPE_Q4_0_4_8 = 32;
-  static const int GGML_TYPE_Q4_0_8_8 = 33;
+
+  /// GGML_TYPE_Q4_0_4_4 = 31, support has been removed from gguf files
+  /// GGML_TYPE_Q4_0_4_8 = 32,
+  /// GGML_TYPE_Q4_0_8_8 = 33,
   static const int GGML_TYPE_TQ1_0 = 34;
   static const int GGML_TYPE_TQ2_0 = 35;
-  static const int GGML_TYPE_COUNT = 36;
-}
 
-abstract class ggml_backend_type {
-  static const int GGML_BACKEND_TYPE_CPU = 0;
-  static const int GGML_BACKEND_TYPE_GPU = 10;
-  static const int GGML_BACKEND_TYPE_GPU_SPLIT = 20;
+  /// GGML_TYPE_IQ4_NL_4_4 = 36,
+  /// GGML_TYPE_IQ4_NL_4_8 = 37,
+  /// GGML_TYPE_IQ4_NL_8_8 = 38,
+  static const int GGML_TYPE_COUNT = 39;
 }
 
 final class ggml_backend_buffer extends ffi.Opaque {}
@@ -2266,32 +2472,34 @@ abstract class ggml_op {
   /// nearest interpolate
   static const int GGML_OP_UPSCALE = 54;
   static const int GGML_OP_PAD = 55;
-  static const int GGML_OP_ARANGE = 56;
-  static const int GGML_OP_TIMESTEP_EMBEDDING = 57;
-  static const int GGML_OP_ARGSORT = 58;
-  static const int GGML_OP_LEAKY_RELU = 59;
-  static const int GGML_OP_FLASH_ATTN_EXT = 60;
-  static const int GGML_OP_FLASH_ATTN_BACK = 61;
-  static const int GGML_OP_SSM_CONV = 62;
-  static const int GGML_OP_SSM_SCAN = 63;
-  static const int GGML_OP_WIN_PART = 64;
-  static const int GGML_OP_WIN_UNPART = 65;
-  static const int GGML_OP_GET_REL_POS = 66;
-  static const int GGML_OP_ADD_REL_POS = 67;
-  static const int GGML_OP_RWKV_WKV6 = 68;
-  static const int GGML_OP_UNARY = 69;
-  static const int GGML_OP_MAP_UNARY = 70;
-  static const int GGML_OP_MAP_BINARY = 71;
-  static const int GGML_OP_MAP_CUSTOM1_F32 = 72;
-  static const int GGML_OP_MAP_CUSTOM2_F32 = 73;
-  static const int GGML_OP_MAP_CUSTOM3_F32 = 74;
-  static const int GGML_OP_MAP_CUSTOM1 = 75;
-  static const int GGML_OP_MAP_CUSTOM2 = 76;
-  static const int GGML_OP_MAP_CUSTOM3 = 77;
-  static const int GGML_OP_CROSS_ENTROPY_LOSS = 78;
-  static const int GGML_OP_CROSS_ENTROPY_LOSS_BACK = 79;
-  static const int GGML_OP_OPT_STEP_ADAMW = 80;
-  static const int GGML_OP_COUNT = 81;
+  static const int GGML_OP_PAD_REFLECT_1D = 56;
+  static const int GGML_OP_ARANGE = 57;
+  static const int GGML_OP_TIMESTEP_EMBEDDING = 58;
+  static const int GGML_OP_ARGSORT = 59;
+  static const int GGML_OP_LEAKY_RELU = 60;
+  static const int GGML_OP_FLASH_ATTN_EXT = 61;
+  static const int GGML_OP_FLASH_ATTN_BACK = 62;
+  static const int GGML_OP_SSM_CONV = 63;
+  static const int GGML_OP_SSM_SCAN = 64;
+  static const int GGML_OP_WIN_PART = 65;
+  static const int GGML_OP_WIN_UNPART = 66;
+  static const int GGML_OP_GET_REL_POS = 67;
+  static const int GGML_OP_ADD_REL_POS = 68;
+  static const int GGML_OP_RWKV_WKV6 = 69;
+  static const int GGML_OP_GATED_LINEAR_ATTN = 70;
+  static const int GGML_OP_UNARY = 71;
+  static const int GGML_OP_MAP_UNARY = 72;
+  static const int GGML_OP_MAP_BINARY = 73;
+  static const int GGML_OP_MAP_CUSTOM1_F32 = 74;
+  static const int GGML_OP_MAP_CUSTOM2_F32 = 75;
+  static const int GGML_OP_MAP_CUSTOM3_F32 = 76;
+  static const int GGML_OP_MAP_CUSTOM1 = 77;
+  static const int GGML_OP_MAP_CUSTOM2 = 78;
+  static const int GGML_OP_MAP_CUSTOM3 = 79;
+  static const int GGML_OP_CROSS_ENTROPY_LOSS = 80;
+  static const int GGML_OP_CROSS_ENTROPY_LOSS_BACK = 81;
+  static const int GGML_OP_OPT_STEP_ADAMW = 82;
+  static const int GGML_OP_COUNT = 83;
 }
 
 /// Abort callback
@@ -2371,7 +2579,7 @@ final class llama_chat_message extends ffi.Struct {
 }
 
 /// lora adapter
-final class llama_lora_adapter extends ffi.Opaque {}
+final class llama_adapter_lora extends ffi.Opaque {}
 
 /// numa strategies
 abstract class ggml_numa_strategy {
@@ -2433,6 +2641,7 @@ final class llama_kv_cache_view extends ffi.Struct {
   external ffi.Pointer<llama_seq_id> cells_sequences;
 }
 
+/// TODO these functions were sandwiched in the old optimization interface, is there a better place for them?
 typedef ggml_log_callback
     = ffi.Pointer<ffi.NativeFunction<ggml_log_callbackFunction>>;
 typedef ggml_log_callbackFunction = ffi.Void Function(ffi.Int32 level,
@@ -2481,150 +2690,6 @@ final class llama_perf_sampler_data extends ffi.Struct {
   @ffi.Int32()
   external int n_sample;
 }
-
-/// stdio state variables.
-///
-/// The following always hold:
-///
-/// if (_flags&(__SLBF|__SWR)) == (__SLBF|__SWR),
-/// _lbfsize is -_bf._size, else _lbfsize is 0
-/// if _flags&__SRD, _w is 0
-/// if _flags&__SWR, _r is 0
-///
-/// This ensures that the getc and putc macros (or inline functions) never
-/// try to write or read from a file that is in `read' or `write' mode.
-/// (Moreover, they can, and do, automatically switch from read mode to
-/// write mode, and back, on "r+" and "w+" files.)
-///
-/// _lbfsize is used only to make the inline line-buffered output stream
-/// code as compact as possible.
-///
-/// _ub, _up, and _ur are used when ungetc() pushes back more characters
-/// than fit in the current _bf, or when ungetc() pushes back a character
-/// that does not match the previous one in _bf.  When this happens,
-/// _ub._base becomes non-nil (i.e., a stream has ungetc() data iff
-/// _ub._base!=NULL) and _up and _ur save the current values of _p and _r.
-///
-/// NB: see WARNING above before changing the layout of this structure!
-typedef FILE = __sFILE;
-
-/// stdio state variables.
-///
-/// The following always hold:
-///
-/// if (_flags&(__SLBF|__SWR)) == (__SLBF|__SWR),
-/// _lbfsize is -_bf._size, else _lbfsize is 0
-/// if _flags&__SRD, _w is 0
-/// if _flags&__SWR, _r is 0
-///
-/// This ensures that the getc and putc macros (or inline functions) never
-/// try to write or read from a file that is in `read' or `write' mode.
-/// (Moreover, they can, and do, automatically switch from read mode to
-/// write mode, and back, on "r+" and "w+" files.)
-///
-/// _lbfsize is used only to make the inline line-buffered output stream
-/// code as compact as possible.
-///
-/// _ub, _up, and _ur are used when ungetc() pushes back more characters
-/// than fit in the current _bf, or when ungetc() pushes back a character
-/// that does not match the previous one in _bf.  When this happens,
-/// _ub._base becomes non-nil (i.e., a stream has ungetc() data iff
-/// _ub._base!=NULL) and _up and _ur save the current values of _p and _r.
-///
-/// NB: see WARNING above before changing the layout of this structure!
-final class __sFILE extends ffi.Struct {
-  /// current position in (some) buffer
-  external ffi.Pointer<ffi.UnsignedChar> _p;
-
-  /// read space left for getc()
-  @ffi.Int()
-  external int _r;
-
-  /// write space left for putc()
-  @ffi.Int()
-  external int _w;
-
-  /// flags, below; this FILE is free if 0
-  @ffi.Short()
-  external int _flags;
-
-  /// fileno, if Unix descriptor, else -1
-  @ffi.Short()
-  external int _file;
-
-  /// the buffer (at least 1 byte, if !NULL)
-  external __sbuf _bf;
-
-  /// 0 or -_bf._size, for inline putc
-  @ffi.Int()
-  external int _lbfsize;
-
-  /// cookie passed to io functions
-  external ffi.Pointer<ffi.Void> _cookie;
-
-  external ffi
-      .Pointer<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<ffi.Void>)>>
-      _close;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Int Function(
-              ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>, ffi.Int)>> _read;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          fpos_t Function(ffi.Pointer<ffi.Void>, fpos_t, ffi.Int)>> _seek;
-
-  external ffi.Pointer<
-      ffi.NativeFunction<
-          ffi.Int Function(
-              ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>, ffi.Int)>> _write;
-
-  /// ungetc buffer
-  external __sbuf _ub;
-
-  /// additions to FILE to not break ABI
-  external ffi.Pointer<__sFILEX> _extra;
-
-  /// saved _r when _r is counting ungetc data
-  @ffi.Int()
-  external int _ur;
-
-  /// guarantee an ungetc() buffer
-  @ffi.Array.multi([3])
-  external ffi.Array<ffi.UnsignedChar> _ubuf;
-
-  /// guarantee a getc() buffer
-  @ffi.Array.multi([1])
-  external ffi.Array<ffi.UnsignedChar> _nbuf;
-
-  /// buffer for fgetln()
-  external __sbuf _lb;
-
-  /// stat.st_blksize (may be != _bf._size)
-  @ffi.Int()
-  external int _blksize;
-
-  /// current lseek offset (see WARNING)
-  @fpos_t()
-  external int _offset;
-}
-
-/// stdio buffers
-final class __sbuf extends ffi.Struct {
-  external ffi.Pointer<ffi.UnsignedChar> _base;
-
-  @ffi.Int()
-  external int _size;
-}
-
-typedef fpos_t = __darwin_off_t;
-typedef __darwin_off_t = __int64_t;
-typedef __int64_t = ffi.LongLong;
-typedef Dart__int64_t = int;
-
-/// hold a buncha junk that would grow the ABI
-final class __sFILEX extends ffi.Opaque {}
 
 const int LLAMA_DEFAULT_SEED = 4294967295;
 

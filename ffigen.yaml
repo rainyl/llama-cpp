@@ -4,14 +4,89 @@ description: |
   Bindings for `src/llama.h`.
 
   Regenerate bindings with `dart --enable-experiment=native-assets run ffigen --config ffigen.yaml`.
-output: 'lib/src/lib_llama_cpp.dart'
+output: "lib/src/g/llama.g.dart"
+ffi-native:
+  asset-id: "package:llama_cpp/llama_cpp.dart"
+sort: false
 headers:
   entry-points:
-    - 'src/include/llama.h'
+    - "src/include/llama.h"
   include-directives:
-    - 'src/include/llama.h'
+    - "src/include/llama.h"
 compiler-opts:
-  - '-Isrc/include -Isrc/ggml/include -Wno-nullability-completeness'
+  - "-Isrc/include -Isrc/ggml/include -Wno-nullability-completeness"
+functions:
+  leaf:
+    include:
+      - 'llama_apply_adapter_cvec'
+      - 'llama_state_seq_set_data'
+      - 'llama_state_save_file'
+      - 'llama_state_set_data'
+      - 'llama_state_seq_save_file'
+      - 'llama_batch_get_one'
+  exclude:
+    - 'llama_load_model_from_file'
+    - 'llama_free_model'
+    - 'llama_new_context_with_model'
+    - 'llama_n_ctx_train'
+    - 'llama_n_embd'
+    - 'llama_n_layer'
+    - 'llama_n_head'
+    - 'llama_n_vocab'
+    - 'llama_get_state_size'
+    - 'llama_copy_state_data'
+    - 'llama_set_state_data'
+    - 'llama_load_session_file'
+    - 'llama_save_session_file'
+    - 'llama_token_get_text'
+    - 'llama_token_get_score'
+    - 'llama_token_get_attr'
+    - 'llama_token_is_eog'
+    - 'llama_token_is_control'
+    - 'llama_token_bos'
+    - 'llama_token_eos'
+    - 'llama_token_eot'
+    - 'llama_token_cls'
+    - 'llama_token_sep'
+    - 'llama_token_nl'
+    - 'llama_token_pad'
+    - 'llama_add_bos_token'
+    - 'llama_add_eos_token'
+    - 'llama_token_fim_pre'
+    - 'llama_token_fim_suf'
+    - 'llama_token_fim_mid'
+    - 'llama_token_fim_pad'
+    - 'llama_token_fim_rep'
+    - 'llama_token_fim_sep'
+    - 'llama_vocab_cls'
+    - 'llama_sampler_init_softmax'
+    - 'llama_perf_context'
+    - 'llama_perf_context_print'
+    - 'llama_perf_context_reset'
+    - 'llama_perf_sampler'
+    - 'llama_perf_sampler_print'
+    - 'llama_perf_sampler_reset'
+  symbol-address:
+    include:
+      - '.*free.*'
+enums:
+  rename:
+    'llama_vocab_type': 'VocabType'
+    'llama_vocab_pre_type': 'VocabPreType'
+    'llama_rope_type': 'RopeType'
+    'llama_token_type': 'TokenType'
+    'llama_token_attr': 'TokenAttr'
+    'llama_ftype': 'FileType'
+    'llama_rope_scaling_type': 'RopeScalingType'
+    'llama_pooling_type': 'PoolingType'
+    'llama_attention_type': 'AttentionType'
+    'llama_split_mode': 'SplitMode'
+    'llama_model_kv_override_type': 'ModelKvOverrideType'
+    'ggml_type': 'GGMLType'
+    'ggml_op': 'GGMOp'
+    'ggml_numa_strategy': 'GGMLNumaStrategy'
+    'ggml_log_level': 'GGMLLogLevel'
+
 preamble: |
   // Copyright (c) 2023, the Dart project authors.  Please see the AUTHORS file
   // for details. All rights reserved. Use of this source code is governed by a
@@ -19,4 +94,3 @@ preamble: |
 comments:
   style: any
   length: full
-ffi-native:

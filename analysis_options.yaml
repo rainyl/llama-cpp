@@ -20,6 +20,8 @@ include: package:lints/recommended.yaml
 #     - camel_case_types
 
 analyzer:
+  errors:
+    no_leading_underscores_for_local_identifiers: ignore
   exclude:
     - lib/src/lib_llama_cpp.dart
 
