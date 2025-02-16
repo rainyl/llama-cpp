@@ -24,54 +24,55 @@ class Sampler extends LLAMAStruct<C.llama_sampler> {
   // );
   // factory Sampler.init(){}
 
-  factory Sampler.greedy() {
+  factory Sampler.greedy({bool attach = true}) {
     final p = C.llama_sampler_init_greedy();
-    return Sampler(p);
+    return Sampler(p, attach: attach);
   }
 
-  factory Sampler.dist({int seed = 0}) {
+  factory Sampler.dist({int seed = 0, bool attach = true}) {
     final p = C.llama_sampler_init_dist(seed);
-    return Sampler(p);
+    return Sampler(p, attach: attach);
   }
 
   /// Top-K sampling described in academic paper "The Curious Case of Neural Text Degeneration" https://arxiv.org/abs/1904.09751
-  factory Sampler.topK(int k) {
+  factory Sampler.topK(int k, {bool attach = true}) {
     final p = C.llama_sampler_init_top_k(k);
-    return Sampler(p);
+    return Sampler(p, attach: attach);
   }
 
   /// @details Nucleus sampling described in academic paper "The Curious Case of Neural Text Degeneration" https://arxiv.org/abs/1904.09751
-  factory Sampler.topP(double p, int minKeep) {
+  factory Sampler.topP(double p, int minKeep, {bool attach = true}) {
     final ptr = C.llama_sampler_init_top_p(p, minKeep);
-    return Sampler(ptr);
+    return Sampler(ptr, attach: attach);
   }
 
   /// @details Minimum P sampling as described in https://github.com/ggerganov/llama.cpp/pull/3841
-  factory Sampler.minP(double p, int minKeep) {
+  factory Sampler.minP(double p, int minKeep, {bool attach = true}) {
     final ptr = C.llama_sampler_init_min_p(p, minKeep);
-    return Sampler(ptr);
+    return Sampler(ptr, attach: attach);
   }
 
   /// Locally Typical Sampling implementation described in the paper https://arxiv.org/abs/2202.00666.
-  factory Sampler.typical(double p, int minKeep) {
+  factory Sampler.typical(double p, int minKeep, {bool attach = true}) {
     final ptr = C.llama_sampler_init_typical(p, minKeep);
-    return Sampler(ptr);
+    return Sampler(ptr, attach: attach);
   }
 
   /// #details Updates the logits l_i` = l_i/t. When t <= 0.0f, the maximum logit is kept at it's original value, the rest are set to -inf
-  factory Sampler.temp(double t) {
+  factory Sampler.temp(double t, {bool attach = true}) {
     final ptr = C.llama_sampler_init_temp(t);
-    return Sampler(ptr);
+    return Sampler(ptr, attach: attach);
   }
 
   /// @details Dynamic temperature implementation (a.k.a. entropy) described in the paper https://arxiv.org/abs/2309.02772.
   factory Sampler.tempExt(
     double t,
     double delta,
-    double exponent,
-  ) {
+    double exponent, {
+    bool attach = true,
+  }) {
     final ptr = C.llama_sampler_init_temp_ext(t, delta, exponent);
-    return Sampler(ptr);
+    return Sampler(ptr, attach: attach);
   }
 
   /// @details XTC sampler as described in https://github.com/oobabooga/text-generation-webui/pull/6335
@@ -80,15 +81,16 @@ class Sampler extends LLAMAStruct<C.llama_sampler> {
     double t = 0.0,
     int minKeep = 0,
     int seed = 0,
+    bool attach = true,
   }) {
     final ptr = C.llama_sampler_init_xtc(p, t, minKeep, seed);
-    return Sampler(ptr);
+    return Sampler(ptr, attach: attach);
   }
 
   /// @details Top n sigma sampling as described in academic paper "Top-nσ: Not All Logits Are You Need" https://arxiv.org/pdf/2411.07641
-  factory Sampler.topNSigma(double n) {
+  factory Sampler.topNSigma(double n, {bool attach = true}) {
     final ptr = C.llama_sampler_init_top_n_sigma(n);
-    return Sampler(ptr);
+    return Sampler(ptr, attach: attach);
   }
 
   /// @details Mirostat 1.0 algorithm described in the paper https://arxiv.org/abs/2007.14966. Uses tokens instead of words.
@@ -97,9 +99,9 @@ class Sampler extends LLAMAStruct<C.llama_sampler> {
   /// @param eta The learning rate used to update `mu` based on the error between the target and observed surprisal of the sampled word. A larger learning rate will cause `mu` to be updated more quickly, while a smaller learning rate will result in slower updates.
   /// @param m The number of tokens considered in the estimation of `s_hat`. This is an arbitrary value that is used to calculate `s_hat`, which in turn helps to calculate the value of `k`. In the paper, they use `m = 100`, but you can experiment with different values to see how it affects the performance of the algorithm.
   /// @param mu Maximum cross-entropy. This value is initialized to be twice the target cross-entropy (`2 * tau`) and is updated in the algorithm based on the error between the target and observed surprisal.
-  factory Sampler.mirostat(int nVocab, int seed, double tau, double eta, int m) {
+  factory Sampler.mirostat(int nVocab, int seed, double tau, double eta, int m, {bool attach = true}) {
     final ptr = C.llama_sampler_init_mirostat(nVocab, seed, tau, eta, m);
-    return Sampler(ptr);
+    return Sampler(ptr, attach: attach);
   }
 
   /// @details Mirostat 2.0 algorithm described in the paper https://arxiv.org/abs/2007.14966. Uses tokens instead of words.
@@ -107,18 +109,18 @@ class Sampler extends LLAMAStruct<C.llama_sampler> {
   /// @param tau  The target cross-entropy (or surprise) value you want to achieve for the generated text. A higher value corresponds to more surprising or less predictable text, while a lower value corresponds to less surprising or more predictable text.
   /// @param eta The learning rate used to update `mu` based on the error between the target and observed surprisal of the sampled word. A larger learning rate will cause `mu` to be updated more quickly, while a smaller learning rate will result in slower updates.
   /// @param mu Maximum cross-entropy. This value is initialized to be twice the target cross-entropy (`2 * tau`) and is updated in the algorithm based on the error between the target and observed surprisal.
-  factory Sampler.mirostatV2(int seed, double tau, double eta) {
+  factory Sampler.mirostatV2(int seed, double tau, double eta, {bool attach = true}) {
     final ptr = C.llama_sampler_init_mirostat_v2(seed, tau, eta);
-    return Sampler(ptr);
+    return Sampler(ptr, attach: attach);
   }
 
-  factory Sampler.grammar(Vocab vocab, String grammarStr, String grammarRoot) {
+  factory Sampler.grammar(Vocab vocab, String grammarStr, String grammarRoot, {bool attach = true}) {
     final cgs = grammarStr.toNativeUtf8().cast<ffi.Char>();
     final cgr = grammarRoot.toNativeUtf8().cast<ffi.Char>();
     final ptr = C.llama_sampler_init_grammar(vocab.ptr, cgs, cgr);
     calloc.free(cgs);
     calloc.free(cgr);
-    return Sampler(ptr);
+    return Sampler(ptr, attach: attach);
   }
 
   /// @details Lazy grammar sampler, introduced in https://github.com/ggerganov/llama.cpp/pull/9639
@@ -129,8 +131,9 @@ class Sampler extends LLAMAStruct<C.llama_sampler> {
     String grammarStr,
     String grammarRoot,
     List<String> triggerWords,
-    List<int> triggerTokens,
-  ) {
+    List<int> triggerTokens, {
+    bool attach = true,
+  }) {
     final cgs = grammarStr.toNativeUtf8().cast<ffi.Char>();
     final cgr = grammarRoot.toNativeUtf8().cast<ffi.Char>();
     final ctw = calloc<ffi.Pointer<ffi.Char>>(triggerWords.length);
@@ -158,7 +161,7 @@ class Sampler extends LLAMAStruct<C.llama_sampler> {
       calloc.free(ctw[i]);
     }
     calloc.free(ctt);
-    return Sampler(ptr);
+    return Sampler(ptr, attach: attach);
   }
 
   /// NOTE: Avoid using on the full vocabulary as searching for repeated tokens can become slow.
@@ -167,10 +170,11 @@ class Sampler extends LLAMAStruct<C.llama_sampler> {
     int penaltyLastN,
     double penaltyRepeat,
     double penaltyFreq,
-    double penaltyPresent,
-  ) {
+    double penaltyPresent, {
+    bool attach = true,
+  }) {
     final ptr = C.llama_sampler_init_penalties(penaltyLastN, penaltyRepeat, penaltyFreq, penaltyPresent);
-    return Sampler(ptr);
+    return Sampler(ptr, attach: attach);
   }
 
   /// @details DRY sampler, designed by p-e-w, as described in: https://github.com/oobabooga/text-generation-webui/pull/5677, porting Koboldcpp implementation authored by pi6am: https://github.com/LostRuins/koboldcpp/pull/982
@@ -181,8 +185,9 @@ class Sampler extends LLAMAStruct<C.llama_sampler> {
     double dryBase,
     int dryAllowedLength,
     int dryPenaltyLastN,
-    List<String> seqBreakers,
-  ) {
+    List<String> seqBreakers, {
+    bool attach = true,
+  }) {
     final csb = calloc<ffi.Pointer<ffi.Char>>(seqBreakers.length);
     for (var i = 0; i < seqBreakers.length; i++) {
       final ct = seqBreakers[i].toNativeUtf8().cast<ffi.Char>();
@@ -202,13 +207,10 @@ class Sampler extends LLAMAStruct<C.llama_sampler> {
       calloc.free(csb[i]);
     }
     calloc.free(csb); // TODO: necessary?
-    return Sampler(ptr);
+    return Sampler(ptr, attach: attach);
   }
 
-  factory Sampler.logitBias(
-    int nVocab,
-    List<LogitBias> logitBias,
-  ) {
+  factory Sampler.logitBias(int nVocab, List<LogitBias> logitBias, {bool attach = true}) {
     final ctb = calloc<C.llama_logit_bias>(logitBias.length);
     for (var i = 0; i < logitBias.length; i++) {
       final ct = logitBias[i];
@@ -216,7 +218,7 @@ class Sampler extends LLAMAStruct<C.llama_sampler> {
     }
     final ptr = C.llama_sampler_init_logit_bias(nVocab, logitBias.length, ctb);
     calloc.free(ctb);
-    return Sampler(ptr);
+    return Sampler(ptr, attach: attach);
   }
 
   /// this sampler is meant to be used for fill-in-the-middle infilling
@@ -239,9 +241,9 @@ class Sampler extends LLAMAStruct<C.llama_sampler> {
   ///
   /// 3. discard non-EOG tokens with low prob
   /// 4. if no tokens are left -> pick EOT
-  factory Sampler.infill(Vocab vocab) {
+  factory Sampler.infill(Vocab vocab, {bool attach = true}) {
     final ptr = C.llama_sampler_init_infill(vocab.ptr);
-    return Sampler(ptr);
+    return Sampler(ptr, attach: attach);
   }
 
   // ffi.Pointer<llama_sampler_i> iface;
@@ -282,12 +284,24 @@ class Sampler extends LLAMAStruct<C.llama_sampler> {
   }
 
   /// important: takes ownership of the sampler object and will free it when llama_sampler_free is called
-  void addSampler(Sampler smpl) => C.llama_sampler_chain_add(ptr, smpl.ptr);
+  void addSampler(Sampler smpl) {
+    // add a sampler to a chain will move the onership, here we should detach it to avoid double free
+    finalizer.detach(smpl);
+    C.llama_sampler_chain_add(ptr, smpl.ptr);
+  }
 
-  Sampler getSampler(int i) => Sampler(C.llama_sampler_chain_get(ptr, i));
+  Sampler getSampler(int i) {
+    final smpl = Sampler(C.llama_sampler_chain_get(ptr, i));
+    return smpl;
+  }
 
   /// after removing a sampler, the chain will no longer own it, and it will not be freed when the chain is freed
-  void removeSampler(int i) => C.llama_sampler_chain_remove(ptr, i);
+  void removeSampler(int i) {
+    final smpl = getSampler(i);
+    // re-attach it to the finalizer
+    finalizer.attach(smpl, smpl.ptr.cast(), detach: smpl);
+    C.llama_sampler_chain_remove(ptr, i);
+  }
 
   int getChainLength() => C.llama_sampler_chain_n(ptr);
 
@@ -299,6 +313,9 @@ class Sampler extends LLAMAStruct<C.llama_sampler> {
 
   @override
   C.llama_sampler get ref => ptr.ref;
+
+  @override
+  String toString() => 'Sampler(address=0x${ptr.address.toRadixString(16)})';
 }
 
 // typedef ISamplerApplyFunction = ffi.Void Function(

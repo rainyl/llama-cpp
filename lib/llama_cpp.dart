@@ -5,6 +5,7 @@ export 'src/core/chat_template.dart';
 export 'src/core/context.dart';
 export 'src/core/enums.dart';
 export 'src/core/ggml.dart';
+export 'src/core/helpers.dart';
 export 'src/core/model.dart';
 export 'src/core/model_params.dart';
 export 'src/core/sampler.dart';

@@ -1,5 +1,6 @@
 {
     "dart.vmAdditionalArgs": [
         "--enable-experiment=native-assets"
-    ]
+    ],
+    "dart.cliAdditionalArgs": []
 }

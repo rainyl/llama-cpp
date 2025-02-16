@@ -1,9 +1,6 @@
 import 'package:ffi/ffi.dart';
 
 import '../g/llama.g.dart' as C;
-import 'enums.dart';
-
-void numaInit(GGMLNumaStrategy strategy) => C.llama_numa_init(strategy);
 
 int timeUs() => C.llama_time_us();
 

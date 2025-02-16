@@ -4,6 +4,7 @@ import 'package:ffi/ffi.dart';
 
 import '../g/llama.g.dart' as C;
 import 'base.dart';
+import 'enums.dart';
 
 class BackendDevice extends LLAMAClass<C.ggml_backend_device> {
   BackendDevice(super.ptr);
@@ -28,3 +29,5 @@ void backendInit() => C.llama_backend_init();
 
 /// Call once at the end of the program - currently only used for MPI
 void backendFree() => C.llama_backend_free();
+
+void numaInit(GGMLNumaStrategy numa) => C.llama_numa_init(numa);

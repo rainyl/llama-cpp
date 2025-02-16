@@ -1,11 +1,10 @@
-// Copyright (c) 2023, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
+// Copyright (c) 2025, rainyl. All rights reserved. Use of this source code is governed by a
+// Apache-2.0 license that can be found in the LICENSE file.
 
-import 'dart:io';
-import 'package:native_assets_cli/code_assets_builder.dart';
-import 'package:path/path.dart' as p;
+// ignore_for_file: avoid_print
+
 import 'package:logging/logging.dart';
+import 'package:native_assets_cli/code_assets_builder.dart';
 import 'package:native_assets_cli/native_assets_cli.dart';
 import 'package:native_toolchain_cmake/native_toolchain_cmake.dart';
 
@@ -16,12 +15,10 @@ void main(List<String> args) async {
 }
 
 Future<void> _builder(BuildInput input, BuildOutputBuilder output) async {
-  final env = Platform.environment;
-
   final packageName = input.packageName;
   final cbuilder = CMakeBuilder.create(
     name: packageName,
-    sourceDir: "src/",
+    sourceDir: input.packageRoot.resolve('src').toFilePath(),
     targets: [
       // '',
     ],

@@ -14,4 +14,13 @@ export '../g/llama.g.dart'
         GGMLType,
         GGMOp,
         GGMLNumaStrategy,
-        GGMLLogLevel;
+        GGMLLogLevel,
+        LLAMA_DEFAULT_SEED,
+        LLAMA_FILE_MAGIC_GGLA,
+        LLAMA_FILE_MAGIC_GGSN,
+        LLAMA_FILE_MAGIC_GGSQ,
+        LLAMA_SESSION_MAGIC,
+        LLAMA_SESSION_VERSION,
+        LLAMA_STATE_SEQ_MAGIC,
+        LLAMA_STATE_SEQ_VERSION,
+        LLAMA_TOKEN_NULL;
