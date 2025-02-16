@@ -3,3 +3,6 @@ pubspec.lock
 lib/libllama_cpp.so
 .idea
 *.gguf
+.vscode/
+!.vscode/settings.json
+coverage/

@@ -20,6 +20,9 @@ void main() {
     final modelInpPath = '$modelDir/${conf.$2}';
 
     test('vocab.${conf.$1}', () async {
+      expect(await File(modelPath).exists(), true);
+      expect(await File(modelInpPath).exists(), true);
+
       final textList = await File(modelInpPath).readAsLines();
 
       final params = llama.ModelParams.create();

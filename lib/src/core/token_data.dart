@@ -14,6 +14,19 @@ class TokenData extends LLAMAStruct<C.llama_token_data> {
     }
   }
 
+  factory TokenData.create({int? id, double? logit, double? p}) {
+    final ptr = calloc<C.llama_token_data>();
+    if (id != null) ptr.ref.id = id;
+    if (logit != null) ptr.ref.logit = logit;
+    if (p != null) ptr.ref.p = p;
+    return TokenData(ptr);
+  }
+
+  factory TokenData.fromNative(C.llama_token_data struct) {
+    final ptr = calloc<C.llama_token_data>()..ref = struct;
+    return TokenData(ptr);
+  }
+
   /// token id
   int get id => ref.id;
 
@@ -40,6 +53,10 @@ class TokenData extends LLAMAStruct<C.llama_token_data> {
 
   @override
   C.llama_token_data get ref => ptr.ref;
+
+  @override
+  String toString() =>
+      'TokenData(address=0x${ptr.address.toRadixString(16)}, id=$id, logit=${logit.toStringAsFixed(3)}, p=${p.toStringAsFixed(3)})';
 }
 
 class TokenDataArray extends LLAMAStruct<C.llama_token_data_array> {
@@ -49,6 +66,44 @@ class TokenDataArray extends LLAMAStruct<C.llama_token_data_array> {
     if (attach) {
       finalizer.attach(this, ptr.cast(), detach: this);
     }
+  }
+
+  factory TokenDataArray.fromList(
+    List<TokenData> list, {
+    int selected = -1,
+    bool sorted = false,
+  }) {
+    final ptr = calloc<C.llama_token_data_array>()
+      ..ref.size = list.length
+      ..ref.selected = selected
+      ..ref.sorted = sorted;
+    final pData = calloc<C.llama_token_data>(list.length);
+    for (var i = 0; i < list.length; i++) {
+      pData[i] = list[i].ref;
+    }
+    ptr.ref.data = pData;
+    return TokenDataArray(ptr);
+  }
+
+  factory TokenDataArray.generate(
+    int size,
+    TokenData Function(int i) generator, {
+    bool dispose = true,
+    int selected = -1,
+    bool sorted = false,
+  }) {
+    final ptr = calloc<C.llama_token_data_array>()
+      ..ref.size = size
+      ..ref.selected = selected
+      ..ref.sorted = sorted;
+    final pData = calloc<C.llama_token_data>(size);
+    for (var i = 0; i < size; i++) {
+      final tokenData = generator(i);
+      pData[i] = tokenData.ref;
+      if (dispose) tokenData.dispose();
+    }
+    ptr.ref.data = pData;
+    return TokenDataArray(ptr);
   }
 
   /// NOTE: this pointer can be modified by the samplers
@@ -66,6 +121,8 @@ class TokenDataArray extends LLAMAStruct<C.llama_token_data_array> {
   bool get sorted => ref.sorted;
   set sorted(bool value) => ref.sorted = value;
 
+  List<TokenData> toList() => List.generate(size, (i) => TokenData.fromNative(data[i]));
+
   @override
   void dispose() {
     finalizer.detach(this);
@@ -75,4 +132,8 @@ class TokenDataArray extends LLAMAStruct<C.llama_token_data_array> {
 
   @override
   C.llama_token_data_array get ref => ptr.ref;
+
+  @override
+  String toString() =>
+      'TokenDataArray(address=0x${ptr.address.toRadixString(16)}, size=$size, selected=$selected, sorted=$sorted)';
 }
