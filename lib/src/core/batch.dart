@@ -3,8 +3,8 @@ import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 
+import '../g/llama.g.dart' as C;
 import 'base.dart';
-import '../g/llama.g.dart' as llama;
 
 /// Input data for llama_decode
 /// A llama_batch object can contain input about one or many sequences
@@ -18,8 +18,8 @@ import '../g/llama.g.dart' as llama;
 /// (if set to NULL, the sequence ID will be assumed to be 0)
 /// - logits : if zero, the logits (and/or the embeddings) for the respective token will not be output
 /// (if set to NULL, only the logits for last token will be returned)
-class Batch extends LLAMAStruct<llama.llama_batch> {
-  static final finalizer = ffi.NativeFinalizer(llama.addresses.llama_batch_free.cast());
+class Batch extends LLAMAStruct<C.llama_batch> {
+  static final finalizer = ffi.NativeFinalizer(C.addresses.llama_batch_free.cast());
   static final finalizer1 = ffi.NativeFinalizer(calloc.nativeFree);
 
   Batch(super.ptr, {bool attach = true}) {
@@ -37,13 +37,13 @@ class Batch extends LLAMAStruct<llama.llama_batch> {
   /// The rest of the llama_batch members are allocated with size n_tokens
   /// All members are left uninitialized
   factory Batch.init(int numTokens, int embd, int nSeqMax) {
-    final b = llama.llama_batch_init(numTokens, embd, nSeqMax);
-    final p = calloc<llama.llama_batch>()..ref = b;
+    final b = C.llama_batch_init(numTokens, embd, nSeqMax);
+    final p = calloc<C.llama_batch>()..ref = b;
     return Batch(p);
   }
 
-  factory Batch.fromNative(llama.llama_batch batch) {
-    final p = calloc<llama.llama_batch>()..ref = batch;
+  factory Batch.fromNative(C.llama_batch batch) {
+    final p = calloc<C.llama_batch>()..ref = batch;
     return Batch(p);
   }
 
@@ -51,13 +51,13 @@ class Batch extends LLAMAStruct<llama.llama_batch> {
   set numTokens(int value) => ref.n_tokens = value;
 
   Int32List get tokens => ref.token.asTypedList(numTokens);
-  ffi.Pointer<llama.llama_token> get tokenPtr => ref.token;
+  ffi.Pointer<C.llama_token> get tokenPtr => ref.token;
 
   Float32List get embd => ref.embd.asTypedList(numTokens);
   ffi.Pointer<ffi.Float> get embdPtr => ref.embd;
 
   Int32List get pos => ref.pos.asTypedList(numTokens);
-  ffi.Pointer<llama.llama_pos> get posPtr => ref.pos;
+  ffi.Pointer<C.llama_pos> get posPtr => ref.pos;
 
   // Int32List get nSeqId => ref.n_seq_id.asTypedList(numTokens);
   // ffi.Pointer<llama.llama_seq_id> get nSeqIdPtr => ref.n_seq_id;
@@ -71,10 +71,10 @@ class Batch extends LLAMAStruct<llama.llama_batch> {
   void dispose() {
     finalizer.detach(this);
     finalizer1.detach(this);
-    llama.llama_batch_free(ref);
+    C.llama_batch_free(ref);
     calloc.free(ptr);
   }
 
   @override
-  llama.llama_batch get ref => ptr.ref;
+  C.llama_batch get ref => ptr.ref;
 }

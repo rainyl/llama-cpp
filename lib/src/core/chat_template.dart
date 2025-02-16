@@ -1,13 +1,12 @@
 import 'dart:ffi' as ffi;
-import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 
+import '../g/llama.g.dart' as C;
 import 'base.dart';
-import '../g/llama.g.dart' as llama;
 
 /// used in chat template
-class ChatMessage extends LLAMAStruct<llama.llama_chat_message> {
+class ChatMessage extends LLAMAStruct<C.llama_chat_message> {
   static final finalizer = ffi.NativeFinalizer(calloc.nativeFree);
 
   ChatMessage(super.ptr, {bool attach = true}) {
@@ -17,7 +16,7 @@ class ChatMessage extends LLAMAStruct<llama.llama_chat_message> {
   }
 
   factory ChatMessage.init({String? role, String? content}) {
-    final ptr = calloc<llama.llama_chat_message>();
+    final ptr = calloc<C.llama_chat_message>();
     ptr.ref.role = role == null ? ffi.nullptr : role.toNativeUtf8().cast();
     ptr.ref.content = content == null ? ffi.nullptr : content.toNativeUtf8().cast();
     return ChatMessage(ptr);
@@ -53,7 +52,7 @@ class ChatMessage extends LLAMAStruct<llama.llama_chat_message> {
   }
 
   @override
-  llama.llama_chat_message get ref => ptr.ref;
+  C.llama_chat_message get ref => ptr.ref;
 }
 
 /// Apply chat template. Inspired by hf apply_chat_template() on python.
@@ -68,7 +67,7 @@ class ChatMessage extends LLAMAStruct<llama.llama_chat_message> {
 /// @return The total number of bytes of the formatted prompt. If is it larger than the size of buffer, you may need to re-alloc it and then re-apply the template.
 (int, String) applyChatTemplate(String tmplate, List<ChatMessage> chat, {bool addAss = true}) {
   final cTmpl = tmplate.toNativeUtf8().cast<ffi.Char>();
-  final pChat = calloc<llama.llama_chat_message>(chat.length);
+  final pChat = calloc<C.llama_chat_message>(chat.length);
   int nBuf = 0;
   for (var i = 0; i < chat.length; i++) {
     pChat[i] = chat[i].ref;
@@ -76,7 +75,7 @@ class ChatMessage extends LLAMAStruct<llama.llama_chat_message> {
   }
   int totalBufLength = 0;
   final pBuf = calloc<ffi.Char>(nBuf);
-  totalBufLength = llama.llama_chat_apply_template(cTmpl, pChat, chat.length, addAss, pBuf, 2 * nBuf);  // TODO: memory issue
+  totalBufLength = C.llama_chat_apply_template(cTmpl, pChat, chat.length, addAss, pBuf, 2 * nBuf);  // TODO: memory issue
   return (totalBufLength, pBuf.cast<Utf8>().toDartString());
 }
 
@@ -84,7 +83,7 @@ class ChatMessage extends LLAMAStruct<llama.llama_chat_message> {
 (int, List<String>) builtinChatTemplates() {
   const n = 32;
   final pbuf = calloc<ffi.Pointer<ffi.Char>>(n);
-  final ret = llama.llama_chat_builtin_templates(pbuf, n);
+  final ret = C.llama_chat_builtin_templates(pbuf, n);
   final templates = List.generate(n, (i) => pbuf[i].cast<Utf8>().toDartString());  // TODO: memory issue
   calloc.free(pbuf);
   return (ret, templates);

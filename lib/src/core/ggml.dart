@@ -2,12 +2,12 @@ import 'dart:ffi' as ffi;
 
 import 'package:ffi/ffi.dart';
 
+import '../g/llama.g.dart' as C;
 import 'base.dart';
-import '../g/llama.g.dart' as llama;
 import 'enums.dart';
 
 /// n-dimensional tensor
-class Tensor extends LLAMAStruct<llama.ggml_tensor> {
+class Tensor extends LLAMAStruct<C.ggml_tensor> {
   static final finalizer = ffi.NativeFinalizer(calloc.nativeFree);
 
   Tensor(super.ptr, {bool attach = true}) {
@@ -70,5 +70,5 @@ class Tensor extends LLAMAStruct<llama.ggml_tensor> {
   }
 
   @override
-  llama.ggml_tensor get ref => ptr.ref;
+  C.ggml_tensor get ref => ptr.ref;
 }

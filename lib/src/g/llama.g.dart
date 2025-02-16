@@ -13,7 +13,7 @@ import 'dart:ffi' as ffi;
 import '' as self;
 
 /// Helpers for getting default parameters
-/// TODO: update API to start accepting pointers to params structs (https://github.com/ggerganov/llama.cpp/discussions/9172)
+/// TODO: update API to start accepting pointers to params structs (https://github.com/ggml-org/llama.cpp/discussions/9172)
 @ffi.Native<llama_model_params Function()>()
 external llama_model_params llama_model_default_params();
 
@@ -982,7 +982,7 @@ external int llama_detokenize(
 
 /// Apply chat template. Inspired by hf apply_chat_template() on python.
 /// Both "model" and "custom_template" are optional, but at least one is required. "custom_template" has higher precedence than "model"
-/// NOTE: This function does not use a jinja parser. It only support a pre-defined list of template. See more: https://github.com/ggerganov/llama.cpp/wiki/Templates-supported-by-llama_chat_apply_template
+/// NOTE: This function does not use a jinja parser. It only support a pre-defined list of template. See more: https://github.com/ggml-org/llama.cpp/wiki/Templates-supported-by-llama_chat_apply_template
 /// @param tmpl A Jinja template to use for this chat. If this is nullptr, the model’s default chat template will be used instead.
 /// @param chat Pointer to a list of multiple llama_chat_message
 /// @param n_msg Number of llama_chat_message in this chat
@@ -1112,7 +1112,7 @@ external ffi.Pointer<llama_sampler> llama_sampler_init_top_p(
   int min_keep,
 );
 
-/// @details Minimum P sampling as described in https://github.com/ggerganov/llama.cpp/pull/3841
+/// @details Minimum P sampling as described in https://github.com/ggml-org/llama.cpp/pull/3841
 @ffi.Native<ffi.Pointer<llama_sampler> Function(ffi.Float, ffi.Size)>()
 external ffi.Pointer<llama_sampler> llama_sampler_init_min_p(
   double p,
@@ -1197,7 +1197,7 @@ external ffi.Pointer<llama_sampler> llama_sampler_init_grammar(
   ffi.Pointer<ffi.Char> grammar_root,
 );
 
-/// @details Lazy grammar sampler, introduced in https://github.com/ggerganov/llama.cpp/pull/9639
+/// @details Lazy grammar sampler, introduced in https://github.com/ggml-org/llama.cpp/pull/9639
 /// @param trigger_words A list of words that will trigger the grammar sampler. This may be updated to a loose regex syntax (w/ ^) in a near future.
 /// @param trigger_tokens A list of tokens that will trigger the grammar sampler.
 @ffi.Native<
@@ -1389,7 +1389,7 @@ final class llama_context extends ffi.Opaque {}
 typedef llama_token = ffi.Int32;
 typedef Dartllama_token = int;
 
-/// TODO: simplify (https://github.com/ggerganov/llama.cpp/pull/9294#pullrequestreview-2286561979)
+/// TODO: simplify (https://github.com/ggml-org/llama.cpp/pull/9294#pullrequestreview-2286561979)
 final class llama_token_data extends ffi.Struct {
   /// token id
   @llama_token()
@@ -2404,7 +2404,7 @@ typedef ggml_abort_callback
     = ffi.Pointer<ffi.NativeFunction<ggml_abort_callbackFunction>>;
 
 /// NOTE: changing the default values of parameters marked as [EXPERIMENTAL] may cause crashes or incorrect results in certain configurations
-/// https://github.com/ggerganov/llama.cpp/pull/7544
+/// https://github.com/ggml-org/llama.cpp/pull/7544
 final class llama_context_params extends ffi.Struct {
   /// text context, 0 = from model
   @ffi.Uint32()

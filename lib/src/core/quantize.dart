@@ -2,11 +2,11 @@ import 'dart:ffi' as ffi;
 
 import 'package:ffi/ffi.dart';
 
+import '../g/llama.g.dart' as C;
 import 'base.dart';
-import '../g/llama.g.dart' as llama;
 import 'enums.dart';
 
-class ModelQuantizeParams extends LLAMAStruct<llama.llama_model_quantize_params> {
+class ModelQuantizeParams extends LLAMAStruct<C.llama_model_quantize_params> {
   static final finalizer = ffi.NativeFinalizer(calloc.nativeFree);
 
   ModelQuantizeParams(super.ptr, {bool attach = true}) {
@@ -16,8 +16,8 @@ class ModelQuantizeParams extends LLAMAStruct<llama.llama_model_quantize_params>
   }
 
   factory ModelQuantizeParams.create() {
-    final params = llama.llama_model_quantize_default_params();
-    final p = calloc<llama.llama_model_quantize_params>()..ref = params;
+    final params = C.llama_model_quantize_default_params();
+    final p = calloc<C.llama_model_quantize_params>()..ref = params;
     return ModelQuantizeParams(p);
   }
 
@@ -72,5 +72,5 @@ class ModelQuantizeParams extends LLAMAStruct<llama.llama_model_quantize_params>
   }
 
   @override
-  llama.llama_model_quantize_params get ref => ptr.ref;
+  C.llama_model_quantize_params get ref => ptr.ref;
 }

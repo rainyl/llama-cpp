@@ -2,10 +2,10 @@ import 'dart:ffi' as ffi;
 
 import 'package:ffi/ffi.dart';
 
+import '../g/llama.g.dart' as C;
 import 'base.dart';
-import '../g/llama.g.dart' as llama;
 
-class TokenData extends LLAMAStruct<llama.llama_token_data> {
+class TokenData extends LLAMAStruct<C.llama_token_data> {
   static final finalizer = ffi.NativeFinalizer(calloc.nativeFree);
 
   TokenData(super.ptr, {bool attach = true}) {
@@ -39,10 +39,10 @@ class TokenData extends LLAMAStruct<llama.llama_token_data> {
   }
 
   @override
-  llama.llama_token_data get ref => ptr.ref;
+  C.llama_token_data get ref => ptr.ref;
 }
 
-class TokenDataArray extends LLAMAStruct<llama.llama_token_data_array> {
+class TokenDataArray extends LLAMAStruct<C.llama_token_data_array> {
   static final finalizer = ffi.NativeFinalizer(calloc.nativeFree);
 
   TokenDataArray(super.ptr, {bool attach = true}) {
@@ -52,7 +52,7 @@ class TokenDataArray extends LLAMAStruct<llama.llama_token_data_array> {
   }
 
   /// NOTE: this pointer can be modified by the samplers
-  ffi.Pointer<llama.llama_token_data> get data => ref.data;
+  ffi.Pointer<C.llama_token_data> get data => ref.data;
 
   int get size => ref.size;
   set size(int value) => ref.size = value;
@@ -74,5 +74,5 @@ class TokenDataArray extends LLAMAStruct<llama.llama_token_data_array> {
   }
 
   @override
-  llama.llama_token_data_array get ref => ptr.ref;
+  C.llama_token_data_array get ref => ptr.ref;
 }

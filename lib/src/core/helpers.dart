@@ -1,21 +1,21 @@
 import 'package:ffi/ffi.dart';
 
+import '../g/llama.g.dart' as C;
 import 'enums.dart';
-import '../g/llama.g.dart' as llama;
 
-void numaInit(GGMLNumaStrategy strategy) => llama.llama_numa_init(strategy);
+void numaInit(GGMLNumaStrategy strategy) => C.llama_numa_init(strategy);
 
-int timeUs() => llama.llama_time_us();
+int timeUs() => C.llama_time_us();
 
-int maxDevices() => llama.llama_max_devices();
+int maxDevices() => C.llama_max_devices();
 
-bool supportsMmap() => llama.llama_supports_mmap();
+bool supportsMmap() => C.llama_supports_mmap();
 
-bool supportsMLock() => llama.llama_supports_mlock();
+bool supportsMLock() => C.llama_supports_mlock();
 
-bool supportsGpuOffload() => llama.llama_supports_gpu_offload();
+bool supportsGpuOffload() => C.llama_supports_gpu_offload();
 
-bool supportsRPC() => llama.llama_supports_rpc();
+bool supportsRPC() => C.llama_supports_rpc();
 
 /// @details Build a split GGUF final path for this chunk.
 /// llama_split_path(split_path, sizeof(split_path), "/models/ggml-model-q4_0", 2, 4) => split_path = "/models/ggml-model-q4_0-00002-of-00004.gguf"
@@ -40,7 +40,7 @@ bool supportsRPC() => llama.llama_supports_rpc();
 // );
 
 /// Print system information
-String printSystemInfo() => llama.llama_print_system_info().cast<Utf8>().toDartString();
+String printSystemInfo() => C.llama_print_system_info().cast<Utf8>().toDartString();
 
 /// Set callback for all future logging events.
 /// If this is not called, or NULL is supplied, everything is output on stderr.

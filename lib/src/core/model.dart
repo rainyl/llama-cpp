@@ -1,18 +1,22 @@
 import 'dart:ffi' as ffi;
 
 import 'package:ffi/ffi.dart';
-import 'package:llama_cpp/src/core/model_params.dart';
-import 'package:llama_cpp/src/core/quantize.dart';
 
+import '../g/llama.g.dart' as C;
 import 'base.dart';
 import 'enums.dart';
-import '../g/llama.g.dart' as llama;
+import 'exception.dart';
+import 'model_params.dart';
+import 'quantize.dart';
 import 'vocab.dart';
 
-class Model extends LLAMAClass<llama.llama_model> {
-  static final finalizer = ffi.NativeFinalizer(llama.addresses.llama_model_free.cast());
+class Model extends LLAMAClass<C.llama_model> {
+  static final finalizer = ffi.NativeFinalizer(C.addresses.llama_model_free.cast());
 
   Model(super.ptr, {bool attach = true}) {
+    if (ptr == ffi.nullptr) {
+      throw LLAMAException('Model not loaded');
+    }
     if (attach) {
       finalizer.attach(this, ptr.cast(), detach: this);
     }
@@ -24,7 +28,7 @@ class Model extends LLAMAClass<llama.llama_model> {
   factory Model.fromFile(String path, {ModelParams? params}) {
     params ??= ModelParams.create();
     final cpath = path.toNativeUtf8().cast<ffi.Char>();
-    final ptr = llama.llama_model_load_from_file(cpath, params.ref);
+    final ptr = C.llama_model_load_from_file(cpath, params.ref);
     calloc.free(cpath);
     return Model(ptr);
   }
@@ -37,7 +41,7 @@ class Model extends LLAMAClass<llama.llama_model> {
     for (var i = 0; i < paths.length; i++) {
       cpaths[i] = paths[i].toNativeUtf8().cast<ffi.Char>();
     }
-    final ptr = llama.llama_model_load_from_splits(cpaths, paths.length, params.ref);
+    final ptr = C.llama_model_load_from_splits(cpaths, paths.length, params.ref);
     for (var i = 0; i < paths.length; i++) {
       calloc.free(cpaths[i]);
     }
@@ -45,20 +49,20 @@ class Model extends LLAMAClass<llama.llama_model> {
     return Model(ptr);
   }
 
-  Vocab get vocab => Vocab(llama.llama_model_get_vocab(ptr));
+  Vocab get vocab => Vocab(C.llama_model_get_vocab(ptr));
 
-  RopeType get ropeType => llama.llama_model_rope_type(ptr);
+  RopeType get ropeType => C.llama_model_rope_type(ptr);
 
-  int get nCtxTrain => llama.llama_model_n_ctx_train(ptr);
+  int get nCtxTrain => C.llama_model_n_ctx_train(ptr);
 
-  int get nEmbd => llama.llama_model_n_embd(ptr);
+  int get nEmbd => C.llama_model_n_embd(ptr);
 
-  int get nLayer => llama.llama_model_n_layer(ptr);
+  int get nLayer => C.llama_model_n_layer(ptr);
 
-  int get nHead => llama.llama_model_n_head(ptr);
+  int get nHead => C.llama_model_n_head(ptr);
 
   /// Get the model's RoPE frequency scaling factor
-  double get ropeFreqScaleTrain => llama.llama_model_rope_freq_scale_train(ptr);
+  double get ropeFreqScaleTrain => C.llama_model_rope_freq_scale_train(ptr);
 
   /// Get metadata value as a string by key name
   /// TODO
@@ -70,7 +74,7 @@ class Model extends LLAMAClass<llama.llama_model> {
   // );
 
   /// Get the number of metadata key/value pairs
-  int get metaCount => llama.llama_model_meta_count(ptr);
+  int get metaCount => C.llama_model_meta_count(ptr);
 
   /// Get metadata key name by index
   /// TODO
@@ -98,7 +102,7 @@ class Model extends LLAMAClass<llama.llama_model> {
   // );
 
   /// Returns the total size of all the tensors in the model in bytes
-  int get size => llama.llama_model_size(ptr);
+  int get size => C.llama_model_size(ptr);
 
   /// Get the default chat template. Returns nullptr if not available
   /// If name is NULL, returns the default chat template
@@ -108,7 +112,7 @@ class Model extends LLAMAClass<llama.llama_model> {
   // );
   String getChatTemplate({String? name}) {
     final cname = name?.toNativeUtf8().cast<ffi.Char>() ?? ffi.nullptr;
-    final p = llama.llama_model_chat_template(ptr, cname);
+    final p = C.llama_model_chat_template(ptr, cname);
     if (cname != ffi.nullptr) calloc.free(cname);
     final rval = p.cast<Utf8>().toDartString();
     calloc.free(p);
@@ -116,26 +120,26 @@ class Model extends LLAMAClass<llama.llama_model> {
   }
 
   /// Returns the total number of parameters in the model
-  int get nParams => llama.llama_model_n_params(ptr);
+  int get nParams => C.llama_model_n_params(ptr);
 
   /// Returns true if the model contains an encoder that requires llama_encode() call
-  bool get hasEncoder => llama.llama_model_has_encoder(ptr);
+  bool get hasEncoder => C.llama_model_has_encoder(ptr);
 
   /// Returns true if the model contains a decoder that requires llama_decode() call
-  bool get hasDecoder => llama.llama_model_has_decoder(ptr);
+  bool get hasDecoder => C.llama_model_has_decoder(ptr);
 
   /// For encoder-decoder models, this function returns id of the token that must be provided
   /// to the decoder to start generating output sequence. For other models, it returns -1.
-  int get decoderStartToken => llama.llama_model_decoder_start_token(ptr);
+  int get decoderStartToken => C.llama_model_decoder_start_token(ptr);
 
   /// Returns true if the model is recurrent (like Mamba, RWKV, etc.)
-  bool get isRecurrent => llama.llama_model_is_recurrent(ptr);
+  bool get isRecurrent => C.llama_model_is_recurrent(ptr);
 
   static int quantize(String path, String pathOut, {ModelQuantizeParams? params}) {
     params ??= ModelQuantizeParams.create();
     final cpath = path.toNativeUtf8().cast<ffi.Char>();
     final cpathOut = pathOut.toNativeUtf8().cast<ffi.Char>();
-    final rval = llama.llama_model_quantize(cpath, cpathOut, params.ptr);
+    final rval = C.llama_model_quantize(cpath, cpathOut, params.ptr);
     calloc.free(cpath);
     calloc.free(cpathOut);
     return rval;
@@ -144,6 +148,6 @@ class Model extends LLAMAClass<llama.llama_model> {
   @override
   void dispose() {
     finalizer.detach(this);
-    llama.llama_model_free(ptr);
+    C.llama_model_free(ptr);
   }
 }

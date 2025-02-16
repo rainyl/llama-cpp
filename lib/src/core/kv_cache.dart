@@ -3,13 +3,13 @@ import 'dart:ffi' as ffi;
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
-import 'package:llama_cpp/src/core/context.dart';
 
+import '../g/llama.g.dart' as C;
 import 'base.dart';
+import 'context.dart';
 import 'enums.dart';
-import '../g/llama.g.dart' as llama;
 
-class ModelKvOverride extends LLAMAStruct<llama.llama_model_kv_override> {
+class ModelKvOverride extends LLAMAStruct<C.llama_model_kv_override> {
   static final finalizer = ffi.NativeFinalizer(calloc.nativeFree);
 
   ModelKvOverride(super.ptr, {bool attach = true}) {
@@ -36,11 +36,11 @@ class ModelKvOverride extends LLAMAStruct<llama.llama_model_kv_override> {
   }
 
   @override
-  llama.llama_model_kv_override get ref => ptr.ref;
+  C.llama_model_kv_override get ref => ptr.ref;
 }
 
 /// Information associated with an individual cell in the KV cache view.
-class KvCacheViewCell extends LLAMAStruct<llama.llama_kv_cache_view_cell> {
+class KvCacheViewCell extends LLAMAStruct<C.llama_kv_cache_view_cell> {
   static final finalizer = ffi.NativeFinalizer(calloc.nativeFree);
 
   KvCacheViewCell(super.ptr, {bool attach = true}) {
@@ -49,8 +49,8 @@ class KvCacheViewCell extends LLAMAStruct<llama.llama_kv_cache_view_cell> {
     }
   }
 
-  factory KvCacheViewCell.fromNative(llama.llama_kv_cache_view_cell cell) {
-    final p = calloc<llama.llama_kv_cache_view_cell>()..ref = cell;
+  factory KvCacheViewCell.fromNative(C.llama_kv_cache_view_cell cell) {
+    final p = calloc<C.llama_kv_cache_view_cell>()..ref = cell;
     return KvCacheViewCell(p);
   }
 
@@ -66,12 +66,12 @@ class KvCacheViewCell extends LLAMAStruct<llama.llama_kv_cache_view_cell> {
   }
 
   @override
-  llama.llama_kv_cache_view_cell get ref => ptr.ref;
+  C.llama_kv_cache_view_cell get ref => ptr.ref;
 }
 
 /// An updateable view of the KV cache.
-class KvCacheView extends LLAMAStruct<llama.llama_kv_cache_view> {
-  static final finalizer = ffi.NativeFinalizer(llama.addresses.llama_kv_cache_view_free.cast());
+class KvCacheView extends LLAMAStruct<C.llama_kv_cache_view> {
+  static final finalizer = ffi.NativeFinalizer(C.addresses.llama_kv_cache_view_free.cast());
 
   KvCacheView(super.ptr, {bool attach = true}) {
     if (attach) {
@@ -119,22 +119,22 @@ class KvCacheView extends LLAMAStruct<llama.llama_kv_cache_view> {
   /// Information for an individual cell.
   UnmodifiableListView<KvCacheViewCell> get cells =>
       UnmodifiableListView(List.generate(ref.n_cells, (i) => KvCacheViewCell.fromNative(ref.cells[i])));
-  ffi.Pointer<llama.llama_kv_cache_view_cell> get cellsPtr => ref.cells;
+  ffi.Pointer<C.llama_kv_cache_view_cell> get cellsPtr => ref.cells;
 
   /// The sequences for each cell. There will be n_seq_max items per cell.
   Int32List get cellsSequences => ref.cells_sequences.asTypedList(ref.n_cells * ref.n_seq_max);
-  ffi.Pointer<llama.llama_seq_id> get cellsSequencesPtr => ref.cells_sequences;
+  ffi.Pointer<C.llama_seq_id> get cellsSequencesPtr => ref.cells_sequences;
 
   /// Update the KV cache view structure with the current state of the KV cache. (use only for debugging purposes)
-  void update(Context ctx) => llama.llama_kv_cache_view_update(ctx.ptr, ptr);
+  void update(Context ctx) => C.llama_kv_cache_view_update(ctx.ptr, ptr);
 
   /// Free a KV cache view. (use only for debugging purposes)
   @override
   void dispose() {
     finalizer.detach(this);
-    llama.llama_kv_cache_view_free(ptr);
+    C.llama_kv_cache_view_free(ptr);
   }
 
   @override
-  llama.llama_kv_cache_view get ref => ptr.ref;
+  C.llama_kv_cache_view get ref => ptr.ref;
 }

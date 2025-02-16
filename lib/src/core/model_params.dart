@@ -2,11 +2,11 @@ import 'dart:ffi' as ffi;
 
 import 'package:ffi/ffi.dart';
 
+import '../g/llama.g.dart' as C;
 import 'base.dart';
 import 'enums.dart';
-import '../g/llama.g.dart' as llama;
 
-class ModelParams extends LLAMAStruct<llama.llama_model_params> {
+class ModelParams extends LLAMAStruct<C.llama_model_params> {
   static final finalizer = ffi.NativeFinalizer(calloc.nativeFree);
 
   ModelParams(super.ptr, {bool attach = true}) {
@@ -16,8 +16,8 @@ class ModelParams extends LLAMAStruct<llama.llama_model_params> {
   }
 
   factory ModelParams.create() {
-    final params = llama.llama_model_default_params();
-    final ptr = calloc<llama.llama_model_params>()..ref = params;
+    final params = C.llama_model_default_params();
+    final ptr = calloc<C.llama_model_params>()..ref = params;
     // calloc.free(params.address);
     return ModelParams(ptr);
   }
@@ -77,10 +77,10 @@ class ModelParams extends LLAMAStruct<llama.llama_model_params> {
   }
 
   @override
-  llama.llama_model_params get ref => ptr.ref;
+  C.llama_model_params get ref => ptr.ref;
 }
 
-class SamplerChainParams extends LLAMAStruct<llama.llama_sampler_chain_params> {
+class SamplerChainParams extends LLAMAStruct<C.llama_sampler_chain_params> {
   static final finalizer = ffi.NativeFinalizer(calloc.nativeFree);
 
   SamplerChainParams(super.ptr, {bool attach = true}) {
@@ -90,8 +90,8 @@ class SamplerChainParams extends LLAMAStruct<llama.llama_sampler_chain_params> {
   }
 
   factory SamplerChainParams.create() {
-    final params = llama.llama_sampler_chain_default_params();
-    final ptr = calloc<llama.llama_sampler_chain_params>()..ref = params;
+    final params = C.llama_sampler_chain_default_params();
+    final ptr = calloc<C.llama_sampler_chain_params>()..ref = params;
     // calloc.free(params.address);
     return SamplerChainParams(ptr);
   }
@@ -107,5 +107,5 @@ class SamplerChainParams extends LLAMAStruct<llama.llama_sampler_chain_params> {
   }
 
   @override
-  llama.llama_sampler_chain_params get ref => ptr.ref;
+  C.llama_sampler_chain_params get ref => ptr.ref;
 }
